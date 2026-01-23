@@ -1,0 +1,23 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "title": "GoogleTasksSyncRequest",
+  "description": "Payload mapped from Task Card for Google Tasks creation",
+  "type": "object",
+  "required": ["title", "notes"],
+  "properties": {
+    "title": {
+      "type": "string",
+      "description": "Google Task title"
+    },
+    "due": {
+      "type": ["string", "null"],
+      "format": "date-time",
+      "description": "RFC 3339 due date; omitted if conversion fails"
+    },
+    "notes": {
+      "type": "string",
+      "description": "Combined stakeholders/actionItems/sourceLink plus idempotency key"
+    }
+  },
+  "additionalProperties": false
+}

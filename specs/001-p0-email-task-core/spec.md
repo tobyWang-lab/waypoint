@@ -13,7 +13,9 @@ This specification defines the P0 (Critical) features required to build the core
 
 - **Epic 1 - Signal Acquisition**: OAuth Gmail integration, email ingestion, and noise filtering
 - **Epic 2 - Intelligence & Navigation**: Intent classification and waypoint extraction using LLM
-- **Epic 3 - Synchronization**: Google Tasks sync and Dashboard delivery
+- **Epic 3 - Synchronization**: Google Tasks sync
+
+The **core pipeline sequence** is: Email Ingestion → AI Noise Filtering → AI Intent/Extraction → Direct Google Tasks Sync → Gmail Labeling ("WAYPOINT-Processed").
 
 All features adhere to the Constitution's **Stateless Processing** principle—no email content or attachments persist beyond processing.
 
@@ -21,6 +23,7 @@ All features adhere to the Constitution's **Stateless Processing** principle—n
 
 This specification defines the Email-to-Task pipeline as an n8n workflow. All components MUST:
 - Be deployable as n8n workflow nodes or steps
+- Use **n8n native nodes** for all interactions (Gmail, Google Tasks, LLM via AI Agent/HTTP)
 - Use n8n's HTTP request capabilities for external service integration
 - Leverage n8n's credential management for OAuth and API authentication
 - Be exported and versioned in n8n's JSON workflow format
@@ -42,7 +45,9 @@ This specification defines the Email-to-Task pipeline as an n8n workflow. All co
 ### Deployment & Stateless Processing
 
 - Deploy as **self-hosted n8n via Docker**
+- Environment-agnostic and container-ready per **Constitution v2.0.0**
 - Configure execution data pruning to enforce stateless processing
+- Disable execution data saving for all runs (success + error); log only non-PII metadata via Error Trigger workflow
 - Execution history containing email data is auto-deleted after workflow completion
 - No persistent storage of raw email content in n8n's internal database
 
@@ -50,6 +55,7 @@ This specification defines the Email-to-Task pipeline as an n8n workflow. All co
 
 - Add Gmail label **"WAYPOINT-Processed"** after successful Google Tasks sync
 - Gmail node filters to exclude emails with this label in future runs
+- Store a deterministic idempotency key (Gmail message ID) in Google Tasks `notes` and skip creation if the key already exists
 - Maintains stateless processing while preventing duplicate task creation
 
 ### Error Handling Strategy
@@ -57,24 +63,31 @@ This specification defines the Email-to-Task pipeline as an n8n workflow. All co
 - Use **"Continue on Fail"** setting on LLM nodes for retryable errors (timeouts, rate limits)
 - Use **Error Trigger workflow** to catch and log permanent failures (auth errors, malformed responses)
 - Inline Code node after LLM nodes validates response and returns partial results with error status
+- Cap LLM input size and attachment bytes; skip oversized items with partial status and reason
 
 ### Task Card Delivery
 
-- Push Task Cards via **Webhook** to a separate frontend/Dashboard application
-- n8n workflow remains stateless; Dashboard is responsible for persistence and UI
-- Webhook payload contains the complete Task Card JSON per defined schema
-- **Sequential sync**: Dashboard Webhook first, then Google Tasks sync
-- Google Tasks sync occurs after successful Dashboard delivery
+- Task Cards are delivered **directly to Google Tasks** with no intermediate Dashboard
+- n8n workflow remains stateless and headless; no external frontend persistence is required
+- **Core pipeline sequence**: Email Ingestion → AI Noise Filtering → AI Intent/Extraction → Direct Google Tasks Sync → Gmail Labeling ("WAYPOINT-Processed")
 
 ### Google Tasks Field Mapping
 
 - `title` → Google Task `title`
 - `dueDate` → Google Task `due` (RFC 3339 format)
 - `stakeholders` + `actionItems` + `sourceLink` → Google Task `notes` (formatted text)
+- Convert ISO 8601 dates to RFC 3339 before sync; if conversion fails, omit `due` and record statusReason
 
 ---
 
 ## Clarifications
+
+### Session 2026-01-21
+
+- Q: How should stateless processing be enforced when runs fail? → A: Disable execution data saving for all runs and log only non-PII metadata via Error Trigger workflow
+- Q: How should duplicates be prevented if Gmail labeling fails? → A: Use Gmail message ID as an idempotency key in Google Tasks notes and skip creation if the key already exists; retry labeling separately
+- Q: How should oversized emails or large attachments be handled for n8n AI Agent limits? → A: Cap input size and attachment bytes; skip oversized items with partial status and reason
+- Q: How should date conversion be handled before Google Tasks sync? → A: Add an explicit transformation step to convert ISO 8601 to RFC 3339; if conversion fails, omit due date and record statusReason
 
 ### Session 2026-01-19
 
@@ -82,8 +95,8 @@ This specification defines the Email-to-Task pipeline as an n8n workflow. All co
 - Q: How should Noise Filtering be implemented in n8n? → A: Use n8n's AI Agent node with lightweight LLM call
 - Q: What is the n8n deployment mode for stateless processing? → A: Self-hosted Docker with execution data pruning
 - Q: How should LLM errors be handled in n8n? → A: Combine "Continue on Fail" for retryable errors with Error Trigger for permanent failures
-- Q: How should Task Cards be delivered to the Dashboard? → A: Push via Webhook to separate frontend/Dashboard application
-- Q: When should Google Tasks sync occur relative to Dashboard? → A: Sequential - Dashboard Webhook first, then Google Tasks sync
+- Q: Where are Task Cards delivered? → A: Directly to Google Tasks (no Dashboard or Webhook delivery)
+- Q: When should Google Tasks sync occur? → A: Immediately after successful LLM extraction
 - Q: How to handle OAuth for Google Tasks? → A: Extend Gmail OAuth credential to include Tasks scope
 - Q: How to prevent duplicate Google Tasks? → A: Add Gmail label "WAYPOINT-Processed" after successful sync
 - Q: How to map Task Card fields to Google Tasks? → A: title→title, dueDate→due, stakeholders+actionItems+sourceLink→notes
@@ -192,9 +205,10 @@ As a user, I want every approved actionable task to be automatically synced to m
 - What happens when an email contains multiple action items? → Extraction returns an array of action items, each as a separate waypoint.
 - What happens when OAuth token is revoked by user? → System detects 401 error, marks user as "deauthorized", and prompts re-authorization on next access.
 - What happens when attachment parsing fails? → Skip the attachment, return partial task list with clear indication of skipped files (Constitution Principle VII).
-- What happens when Google Tasks API rate limit is exceeded? → Set Task Card status to "partial" with statusReason; Dashboard can retry later.
+- What happens when email body or attachments exceed LLM limits? → Skip oversized content and return partial status with explicit size-limit reason.
+- What happens when Google Tasks API rate limit is exceeded? → Set Task Card status to "partial" with statusReason; workflow can retry per n8n error handling.
 - What happens when dueDate format is invalid for Google Tasks? → Convert to RFC 3339 format; if conversion fails, sync without due date and note in statusReason.
-- What happens when Google Tasks sync succeeds but Gmail labeling fails? → Log warning; task is created but email may be reprocessed (idempotent check on Dashboard side).
+- What happens when Google Tasks sync succeeds but Gmail labeling fails? → Log warning; retry Gmail labeling and prevent duplicates by checking a Gmail message ID idempotency key stored in Google Tasks notes.
 
 ---
 
@@ -230,13 +244,14 @@ As a user, I want every approved actionable task to be automatically synced to m
 
 #### Epic 3: Synchronization
 
-- **FR-021**: System MUST sync Task Cards to Google Tasks API after successful Dashboard webhook delivery.
 - **FR-022**: System MUST use extended OAuth credentials including Google Tasks scope (`https://www.googleapis.com/auth/tasks`).
-- **FR-023**: System MUST map Task Card fields to Google Tasks: title→title, dueDate→due (RFC 3339), stakeholders+actionItems+sourceLink→notes.
-- **FR-024**: System MUST add Gmail label "WAYPOINT-Processed" to emails after successful Google Tasks sync.
-- **FR-025**: System MUST filter out emails with "WAYPOINT-Processed" label to prevent duplicate task creation.
-- **FR-026**: System MUST set Task Card status to "partial" with descriptive statusReason when Google Tasks sync fails.
-- **FR-027**: System MUST convert dueDate to RFC 3339 format before sending to Google Tasks API.
+- **FR-023**: System MUST sync Task Cards to Google Tasks API immediately after successful LLM extraction.
+- **FR-024**: System MUST map Task Card fields to Google Tasks: title→title, dueDate→due (RFC 3339), stakeholders+actionItems+sourceLink→notes.
+- **FR-024a**: System MUST include a deterministic idempotency key (Gmail message ID) in Google Tasks notes to prevent duplicates.
+- **FR-025**: System MUST add Gmail label "WAYPOINT-Processed" to emails after successful Google Tasks sync.
+- **FR-026**: System MUST filter out emails with "WAYPOINT-Processed" label to prevent duplicate task creation.
+- **FR-027**: System MUST set Task Card status to "partial" with descriptive statusReason when Google Tasks sync fails.
+- **FR-028**: System MUST convert ISO 8601 dueDate to RFC 3339 prior to Google Tasks sync; on conversion failure, omit due date and set statusReason.
 
 ### Key Entities
 
@@ -359,6 +374,8 @@ The Task Card is the primary output artifact. It adheres to the **Stateless Proc
 
 ### Measurable Outcomes
 
+**Primary end-to-end success indicators**: SC-011 and SC-012.
+
 - **SC-001**: Users can complete Gmail OAuth authorization in under 60 seconds.
 - **SC-002**: System processes 100 emails and generates task cards in under 5 minutes.
 - **SC-003**: Noise filtering achieves at least 90% accuracy in identifying promotional/newsletter emails.
@@ -372,7 +389,6 @@ The Task Card is the primary output artifact. It adheres to the **Stateless Proc
 - **SC-011**: Google Tasks sync successfully creates tasks in user's Google Tasks list for 95%+ of Task Cards with status "success".
 - **SC-012**: Task Cards synced to Google Tasks contain correct title, due date, and notes with stakeholders/actionItems/sourceLink.
 - **SC-013**: Emails successfully synced receive "WAYPOINT-Processed" label preventing duplicate task creation.
-- **SC-014**: Google Tasks sync failures are reflected in Task Card status as "partial" with descriptive statusReason.
 
 ---
 
@@ -396,4 +412,3 @@ The Task Card is the primary output artifact. It adheres to the **Stateless Proc
 - **LLM Provider API**: For intent classification and waypoint extraction (via n8n AI Agent node).
 - **Docker**: For self-hosted n8n deployment.
 - **n8n**: Workflow automation platform (self-hosted via Docker).
-- **Dashboard Application**: External frontend to receive Task Cards via Webhook.
