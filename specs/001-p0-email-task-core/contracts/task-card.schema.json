@@ -1,0 +1,100 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "title": "TaskCard",
+  "description": "Structured task output from WAYPOINT email processing",
+  "type": "object",
+  "required": ["id", "title", "sourceLink", "intent", "createdAt", "status"],
+  "properties": {
+    "id": {
+      "type": "string",
+      "description": "Unique identifier for the task card (UUID v4)"
+    },
+    "title": {
+      "type": "string",
+      "description": "One-sentence summary of the task (max 120 characters)",
+      "maxLength": 120
+    },
+    "sourceLink": {
+      "type": "string",
+      "format": "uri",
+      "description": "Gmail deep link to original email (https://mail.google.com/...)"
+    },
+    "intent": {
+      "type": "string",
+      "enum": ["Actionable", "FYI", "Forward"],
+      "description": "Classified intent of the source email"
+    },
+    "dueDate": {
+      "type": ["string", "null"],
+      "format": "date",
+      "description": "Extracted due date in ISO 8601 format (YYYY-MM-DD), null if not found"
+    },
+    "stakeholders": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      },
+      "description": "List of key people mentioned in the email"
+    },
+    "actionItems": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      },
+      "description": "List of specific actions to be taken"
+    },
+    "priority": {
+      "type": ["string", "null"],
+      "enum": ["High", "Medium", "Low", null],
+      "description": "AI-suggested priority level (null if not estimated)"
+    },
+    "estimatedMinutes": {
+      "type": ["integer", "null"],
+      "minimum": 0,
+      "description": "AI-estimated time to complete in minutes (null if not estimated)"
+    },
+    "category": {
+      "type": "string",
+      "enum": ["urgent", "followup", "blocked", "completed", "draft"],
+      "description": "Task category per Constitution Principle III"
+    },
+    "createdAt": {
+      "type": "string",
+      "format": "date-time",
+      "description": "Timestamp when the task card was generated (ISO 8601)"
+    },
+    "status": {
+      "type": "string",
+      "enum": ["success", "partial", "failure", "skipped"],
+      "description": "Processing status per Constitution Principle III"
+    },
+    "statusReason": {
+      "type": ["string", "null"],
+      "description": "Human-readable explanation for non-success status"
+    },
+    "metadata": {
+      "type": "object",
+      "properties": {
+        "emailMessageId": {
+          "type": "string",
+          "description": "Gmail message ID for reference (not the content)"
+        },
+        "processingDurationMs": {
+          "type": "integer",
+          "description": "Time taken to process this email in milliseconds"
+        },
+        "llmProvider": {
+          "type": "string",
+          "description": "LLM provider used for extraction (e.g., 'openai', 'anthropic')"
+        },
+        "extractionConfidence": {
+          "type": "number",
+          "minimum": 0,
+          "maximum": 1,
+          "description": "Overall confidence score for extraction accuracy"
+        }
+      }
+    }
+  },
+  "additionalProperties": false
+}

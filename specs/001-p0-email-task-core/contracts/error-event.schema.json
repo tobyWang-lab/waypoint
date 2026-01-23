@@ -1,0 +1,35 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "title": "WorkflowErrorEvent",
+  "description": "Non-PII error event emitted by Error Trigger workflow",
+  "type": "object",
+  "required": ["eventId", "messageId", "stage", "errorType", "timestamp"],
+  "properties": {
+    "eventId": {
+      "type": "string",
+      "description": "Unique error event identifier"
+    },
+    "messageId": {
+      "type": "string",
+      "description": "Gmail message ID only (no email content)"
+    },
+    "stage": {
+      "type": "string",
+      "enum": ["ingestion", "filtering", "classification", "extraction", "sync", "labeling"],
+      "description": "Workflow stage where error occurred"
+    },
+    "errorType": {
+      "type": "string",
+      "description": "Retryable or permanent error category"
+    },
+    "statusReason": {
+      "type": "string",
+      "description": "Human-readable error summary (no PII)"
+    },
+    "timestamp": {
+      "type": "string",
+      "format": "date-time"
+    }
+  },
+  "additionalProperties": false
+}
