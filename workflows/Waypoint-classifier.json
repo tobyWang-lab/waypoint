@@ -1,0 +1,556 @@
+{
+  "name": "Waypoint-classifier",
+  "nodes": [
+    {
+      "parameters": {
+        "rule": {
+          "interval": [
+            {
+              "field": "seconds"
+            }
+          ]
+        }
+      },
+      "type": "n8n-nodes-base.scheduleTrigger",
+      "typeVersion": 1.3,
+      "position": [
+        -208,
+        0
+      ],
+      "id": "76de3dab-0526-4ada-b4cb-5831c8ce8574",
+      "name": "Schedule Trigger"
+    },
+    {
+      "parameters": {
+        "model": {
+          "__rl": true,
+          "value": "gpt-5-nano",
+          "mode": "list",
+          "cachedResultName": "gpt-5-nano"
+        },
+        "builtInTools": {},
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.lmChatOpenAi",
+      "typeVersion": 1.3,
+      "position": [
+        272,
+        208
+      ],
+      "id": "ecc3721c-2014-4d15-a8b2-9aaeb3848e42",
+      "name": "OpenAI Chat Model",
+      "credentials": {
+        "openAiApi": {
+          "id": "fwDjRpCsBU4HmMep",
+          "name": "Joe_OpenAi"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "operation": "get",
+        "dataTableId": {
+          "__rl": true,
+          "value": "nrnwFAr2mz3O24LD",
+          "mode": "list",
+          "cachedResultName": "Waypoint_Mail_DB",
+          "cachedResultUrl": "/projects/FrVfm13rbs02W3ED/datatables/nrnwFAr2mz3O24LD"
+        },
+        "matchType": "allConditions",
+        "filters": {
+          "conditions": [
+            {
+              "keyName": "status",
+              "keyValue": "0"
+            }
+          ]
+        },
+        "limit": 10
+      },
+      "type": "n8n-nodes-base.dataTable",
+      "typeVersion": 1.1,
+      "position": [
+        0,
+        0
+      ],
+      "id": "d1a03737-125f-46cf-9acc-47f6c18ed7e1",
+      "name": "Get row(s)"
+    },
+    {
+      "parameters": {
+        "resource": "table",
+        "operation": "create",
+        "tableName": "Waypoint_Ptmp_DB",
+        "columns": {
+          "column": [
+            {
+              "name": "From"
+            },
+            {
+              "name": "To"
+            },
+            {
+              "name": "Subject"
+            },
+            {
+              "name": "snippet"
+            },
+            {
+              "name": "threadId"
+            },
+            {
+              "name": "tag"
+            },
+            {
+              "name": "due_date",
+              "type": "date"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.dataTable",
+      "typeVersion": 1.1,
+      "position": [
+        1056,
+        128
+      ],
+      "id": "49130d42-cc4b-47db-8147-6ac24055b3df",
+      "name": "Create a data table"
+    },
+    {
+      "parameters": {
+        "resource": "table",
+        "options": {
+          "filterName": "Waypoint_Ptmp_DB"
+        }
+      },
+      "type": "n8n-nodes-base.dataTable",
+      "typeVersion": 1.1,
+      "position": [
+        624,
+        0
+      ],
+      "id": "21b86c69-51cd-4667-ad4d-aaf5193355f4",
+      "name": "List data tables",
+      "alwaysOutputData": true
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 3
+          },
+          "conditions": [
+            {
+              "id": "9202d810-6fea-48f2-84ef-708f692b62d9",
+              "leftValue": "={{ $json.name }}",
+              "rightValue": "",
+              "operator": {
+                "type": "string",
+                "operation": "notEmpty",
+                "singleValue": true
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {
+          "ignoreCase": false
+        }
+      },
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.3,
+      "position": [
+        832,
+        0
+      ],
+      "id": "3c6d1b0e-a5ce-410a-99ca-cd060999df11",
+      "name": "If"
+    },
+    {
+      "parameters": {
+        "operation": "update",
+        "dataTableId": {
+          "__rl": true,
+          "value": "nrnwFAr2mz3O24LD",
+          "mode": "list",
+          "cachedResultName": "Waypoint_Mail_DB",
+          "cachedResultUrl": "/projects/FrVfm13rbs02W3ED/datatables/nrnwFAr2mz3O24LD"
+        },
+        "matchType": "allConditions",
+        "filters": {
+          "conditions": [
+            {
+              "keyName": "threadId",
+              "keyValue": "={{ $json.threadId }}"
+            }
+          ]
+        },
+        "columns": {
+          "mappingMode": "defineBelow",
+          "value": {
+            "status": "1"
+          },
+          "matchingColumns": [],
+          "schema": [
+            {
+              "id": "From",
+              "displayName": "From",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "readOnly": false,
+              "removed": true
+            },
+            {
+              "id": "To",
+              "displayName": "To",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "readOnly": false,
+              "removed": true
+            },
+            {
+              "id": "Subject",
+              "displayName": "Subject",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "readOnly": false,
+              "removed": true
+            },
+            {
+              "id": "snippet",
+              "displayName": "snippet",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "readOnly": false,
+              "removed": true
+            },
+            {
+              "id": "threadId",
+              "displayName": "threadId",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "readOnly": false,
+              "removed": true
+            },
+            {
+              "id": "status",
+              "displayName": "status",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "readOnly": false,
+              "removed": false
+            }
+          ],
+          "attemptToConvertTypes": false,
+          "convertFieldsToString": false
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.dataTable",
+      "typeVersion": 1.1,
+      "position": [
+        1408,
+        -16
+      ],
+      "id": "0af59834-9d59-41a7-a679-549c62c2c27f",
+      "name": "Update row(s)"
+    },
+    {
+      "parameters": {
+        "promptType": "define",
+        "text": "=你是郵件分類助手。根據主旨+內容輸出唯一JSON：{\"tag\":\"Noise|Draft Task|FYI|Forward\",\"dueDate\":\"RFC3339(例 2026-01-21T13:54:39.000Z)\" 或 null}；不得輸出任何其他文字。\n\n【分類規則(優先序)】\n1) Forward：明顯要轉給他人/窗口/其他部門處理（如「請轉寄」「請XX處理」「非我負責」）。\n2) FYI-政策特例：凡提到「隱私權/Privacy Notice/條款/Terms/政策/Policy 更新」一律FYI；即使出現「請前往連結查閱/閱讀/查看/了解/參考/檢視/確認更新內容」仍是FYI。\n   只有出現「必須完成動作」才改成Draft Task：同意/接受(點擊同意、重新同意、opt-in/out)、回覆、提交/上傳/填表、設定/驗證、付款/取消訂閱，或有後果字眼「務必/否則/若未…將/停止服務/限制使用」。\n   「確認」若是確認內容=FYI；確認已完成某動作(回覆/提交/付款/設定)=Draft Task。\n3) Draft Task：有明確請求你去做事/交付/回覆/處理（但「請」不等於任務；若只是閱讀/查閱/確認內容→FYI）。\n4) Noise：廣告促銷/電子報/推播/社群更新/系統自動通知且不需行動。\n5) 其他無需行動的資訊=FYI。\n\n【dueDate抽取】\n- 只在出現明確期限語意(截止/最晚/請於/到期/Before/By/Deadline)或強制動作期限時填。\n- 多個日期取最像截止且最近者。\n- 若只有日期無時間→補為當日 23:59:59.000Z。\n- 若無期限→null；相對時間無法推定實際日期→null。\n- 輸出必須是 RFC3339/ISO8601 UTC 格式字串，例如：2026-01-21T13:54:39.000Z\n\n【輸入】\nSubject: {{ $json.Subject }}\nBody: {{ $json.snippet }}\n",
+        "hasOutputParser": true,
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.agent",
+      "typeVersion": 3.1,
+      "position": [
+        272,
+        0
+      ],
+      "id": "9daf6945-00c3-405d-8cd2-efac00a60999",
+      "name": "AI Agent"
+    },
+    {
+      "parameters": {
+        "schemaType": "manual",
+        "inputSchema": "{ \"type\": \"object\", \"properties\": { \"tag\": { \"type\": \"string\", \"description\": \"任務標籤，例如 Forward\" }, \"dueDate\": { \"type\": \"datetime\", \"description\": \"截止日期，格式為 RFC3339，例如例 2026-01-21T13:54:39.000Z\" } } }"
+      },
+      "type": "@n8n/n8n-nodes-langchain.outputParserStructured",
+      "typeVersion": 1.3,
+      "position": [
+        416,
+        208
+      ],
+      "id": "de2b89c4-b7ad-44c4-8666-5779039a2597",
+      "name": "Structured Output Parser"
+    },
+    {
+      "parameters": {
+        "dataTableId": {
+          "__rl": true,
+          "value": "ynG4Tnq1YsFG5XCM",
+          "mode": "list",
+          "cachedResultName": "Waypoint_Ptmp_DB",
+          "cachedResultUrl": "/projects/FrVfm13rbs02W3ED/datatables/ynG4Tnq1YsFG5XCM"
+        },
+        "columns": {
+          "mappingMode": "defineBelow",
+          "value": {
+            "tag": "={{ $('AI Agent').item.json.output.tag }}",
+            "Subject": "={{ $('Get row(s)').item.json.Subject }}",
+            "snippet": "={{ $('Get row(s)').item.json.snippet }}",
+            "threadId": "={{ $('Get row(s)').item.json.threadId }}",
+            "To": "={{ $('Get row(s)').item.json.To }}",
+            "From": "={{ $('Get row(s)').item.json.From }}",
+            "task_status": "0",
+            "lable_status": "0",
+            "due_date": "={{ $('AI Agent').item.json.output.dueDate }}"
+          },
+          "matchingColumns": [],
+          "schema": [
+            {
+              "id": "From",
+              "displayName": "From",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "readOnly": false,
+              "removed": false
+            },
+            {
+              "id": "To",
+              "displayName": "To",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "readOnly": false,
+              "removed": false
+            },
+            {
+              "id": "Subject",
+              "displayName": "Subject",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "readOnly": false,
+              "removed": false
+            },
+            {
+              "id": "snippet",
+              "displayName": "snippet",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "readOnly": false,
+              "removed": false
+            },
+            {
+              "id": "threadId",
+              "displayName": "threadId",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "readOnly": false,
+              "removed": false
+            },
+            {
+              "id": "tag",
+              "displayName": "tag",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "readOnly": false,
+              "removed": false
+            },
+            {
+              "id": "task_status",
+              "displayName": "task_status",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "readOnly": false,
+              "removed": false
+            },
+            {
+              "id": "lable_status",
+              "displayName": "lable_status",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "readOnly": false,
+              "removed": false
+            },
+            {
+              "id": "due_date",
+              "displayName": "due_date",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "readOnly": false,
+              "removed": false
+            }
+          ],
+          "attemptToConvertTypes": false,
+          "convertFieldsToString": false
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.dataTable",
+      "typeVersion": 1.1,
+      "position": [
+        1232,
+        -16
+      ],
+      "id": "ad01038d-f0c8-444c-a728-931acf469242",
+      "name": "Insert row1"
+    }
+  ],
+  "pinData": {},
+  "connections": {
+    "OpenAI Chat Model": {
+      "ai_languageModel": [
+        [
+          {
+            "node": "AI Agent",
+            "type": "ai_languageModel",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Schedule Trigger": {
+      "main": [
+        [
+          {
+            "node": "Get row(s)",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Get row(s)": {
+      "main": [
+        [
+          {
+            "node": "AI Agent",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Create a data table": {
+      "main": [
+        [
+          {
+            "node": "Insert row1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "List data tables": {
+      "main": [
+        [
+          {
+            "node": "If",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "If": {
+      "main": [
+        [
+          {
+            "node": "Insert row1",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Create a data table",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "AI Agent": {
+      "main": [
+        [
+          {
+            "node": "List data tables",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Structured Output Parser": {
+      "ai_outputParser": [
+        [
+          {
+            "node": "AI Agent",
+            "type": "ai_outputParser",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Insert row1": {
+      "main": [
+        [
+          {
+            "node": "Update row(s)",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": false,
+  "settings": {
+    "executionOrder": "v1",
+    "availableInMCP": false
+  },
+  "versionId": "63f66cbf-ea0b-4bb4-80f9-2750eb3dc4fa",
+  "meta": {
+    "templateCredsSetupCompleted": true,
+    "instanceId": "1d439c4d93c659f0613cd7f721f34cb95f1d33a263ec1a3aee355b8efbb09a1d"
+  },
+  "id": "ki9dWMYfJFWsQ_IvqVBqJ",
+  "tags": []
+}

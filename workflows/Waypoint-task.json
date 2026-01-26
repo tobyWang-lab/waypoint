@@ -1,0 +1,203 @@
+{
+  "name": "Waypoint-task",
+  "nodes": [
+    {
+      "parameters": {
+        "content": "## 基本創建 task\n**",
+        "color": 4
+      },
+      "type": "n8n-nodes-base.stickyNote",
+      "typeVersion": 1,
+      "position": [
+        -352,
+        -80
+      ],
+      "id": "4612c1d5-3e0a-40ba-8e38-67ab18146942",
+      "name": "Sticky Note"
+    },
+    {
+      "parameters": {
+        "task": "U3FmYzFoal9JMWxZNGRpTA",
+        "title": "={{ $json.Subject }}",
+        "additionalFields": {
+          "dueDate": "={{ $json.due_date }}",
+          "notes": "={{ $json.snippet }}"
+        }
+      },
+      "type": "n8n-nodes-base.googleTasks",
+      "typeVersion": 1,
+      "position": [
+        400,
+        256
+      ],
+      "id": "7821a1c8-b8bc-4f03-a901-4b00a806f9c0",
+      "name": "Create a task",
+      "credentials": {
+        "googleTasksOAuth2Api": {
+          "id": "lYKVpCrxtLqnT5n6",
+          "name": "Astor_Tasks"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "rule": {
+          "interval": [
+            {
+              "field": "seconds"
+            }
+          ]
+        }
+      },
+      "type": "n8n-nodes-base.scheduleTrigger",
+      "typeVersion": 1.3,
+      "position": [
+        -272,
+        160
+      ],
+      "id": "c061cad4-885b-4521-9d09-b207c951b777",
+      "name": "Schedule Trigger"
+    },
+    {
+      "parameters": {
+        "operation": "get",
+        "dataTableId": {
+          "__rl": true,
+          "value": "ynG4Tnq1YsFG5XCM",
+          "mode": "list",
+          "cachedResultName": "Waypoint_Ptmp_DB",
+          "cachedResultUrl": "/projects/FrVfm13rbs02W3ED/datatables/ynG4Tnq1YsFG5XCM"
+        },
+        "matchType": "allConditions",
+        "filters": {
+          "conditions": [
+            {
+              "keyName": "tag",
+              "keyValue": "Draft Task"
+            }
+          ]
+        }
+      },
+      "type": "n8n-nodes-base.dataTable",
+      "typeVersion": 1.1,
+      "position": [
+        -32,
+        160
+      ],
+      "id": "fd6fd68e-1a6c-4aa2-8cc8-338f0961fcbc",
+      "name": "Get row(s)1"
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 3
+          },
+          "conditions": [
+            {
+              "id": "bb7397d6-9c5d-4656-b516-f4d51a55a311",
+              "leftValue": "={{ $json.due_date }}",
+              "rightValue": "null",
+              "operator": {
+                "type": "string",
+                "operation": "empty",
+                "singleValue": true
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.3,
+      "position": [
+        176,
+        160
+      ],
+      "id": "532b0415-fd68-4dcb-8579-ac8d854750dd",
+      "name": "If"
+    },
+    {
+      "parameters": {
+        "task": "U3FmYzFoal9JMWxZNGRpTA",
+        "title": "={{ $json.Subject }}",
+        "additionalFields": {
+          "dueDate": "={{ $('Get row(s)1').item.json.createdAt }}",
+          "notes": "={{ $json.snippet }}"
+        }
+      },
+      "type": "n8n-nodes-base.googleTasks",
+      "typeVersion": 1,
+      "position": [
+        400,
+        128
+      ],
+      "id": "20dadcd7-8fb3-42aa-b16d-ec16df0cb709",
+      "name": "Create a task1",
+      "credentials": {
+        "googleTasksOAuth2Api": {
+          "id": "lYKVpCrxtLqnT5n6",
+          "name": "Astor_Tasks"
+        }
+      }
+    }
+  ],
+  "pinData": {},
+  "connections": {
+    "Schedule Trigger": {
+      "main": [
+        [
+          {
+            "node": "Get row(s)1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Get row(s)1": {
+      "main": [
+        [
+          {
+            "node": "If",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "If": {
+      "main": [
+        [
+          {
+            "node": "Create a task1",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Create a task",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": false,
+  "settings": {
+    "executionOrder": "v1",
+    "availableInMCP": false
+  },
+  "versionId": "05186d4f-5c60-40e1-909d-6b71d55cbd1d",
+  "meta": {
+    "instanceId": "1d439c4d93c659f0613cd7f721f34cb95f1d33a263ec1a3aee355b8efbb09a1d"
+  },
+  "id": "i0FZ4MCHMn3pU2-oZbSNy",
+  "tags": []
+}
