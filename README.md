@@ -1,6 +1,6 @@
-# Workflows
-
-This project consists of three core workflows designed to run in sequence:
+# Waypoint 
+This is an n8n-based automated email management system.
+It automatically retrieves emails from Gmail, uses AI (OpenAI) for intelligent classification—such as identifying actionable tasks, emails to be forwarded, or messages for reference only—and seamlessly syncs tasks that require action to Google Tasks.
 
 ## 1. Waypoint-mail-retriever
 
