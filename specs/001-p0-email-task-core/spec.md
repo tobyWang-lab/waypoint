@@ -55,8 +55,9 @@ This specification defines the Email-to-Task pipeline as an n8n workflow. All co
 
 - Add Gmail label **"WAYPOINT-Processed"** after successful Google Tasks sync
 - Gmail node filters to exclude emails with this label in future runs
-- Store a deterministic idempotency key (Gmail message ID) in Google Tasks `notes` and skip creation if the key already exists
-- Maintains stateless processing while preventing duplicate task creation
+- **Thread-Aware Deduplication**: Store the `ThreadId` as an idempotency key in Google Tasks `notes`. 
+- **Mail Loop Handling**: Before creating a task, search for existing tasks containing the same `ThreadId`. If found, the system SHOULD update the existing task (e.g., append new information) rather than creating a duplicate.
+- Maintains stateless processing while preventing duplicate task creation per thread.
 
 ### Error Handling Strategy
 
