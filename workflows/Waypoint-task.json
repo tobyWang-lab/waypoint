@@ -17,30 +17,6 @@
     },
     {
       "parameters": {
-        "task": "U3FmYzFoal9JMWxZNGRpTA",
-        "title": "={{ $json.Subject }}",
-        "additionalFields": {
-          "dueDate": "={{ $json.due_date }}",
-          "notes": "={{ $json.snippet }}"
-        }
-      },
-      "type": "n8n-nodes-base.googleTasks",
-      "typeVersion": 1,
-      "position": [
-        400,
-        256
-      ],
-      "id": "7821a1c8-b8bc-4f03-a901-4b00a806f9c0",
-      "name": "Create a task",
-      "credentials": {
-        "googleTasksOAuth2Api": {
-          "id": "lYKVpCrxtLqnT5n6",
-          "name": "Astor_Tasks"
-        }
-      }
-    },
-    {
-      "parameters": {
         "rule": {
           "interval": [
             {
@@ -52,7 +28,7 @@
       "type": "n8n-nodes-base.scheduleTrigger",
       "typeVersion": 1.3,
       "position": [
-        -272,
+        -432,
         160
       ],
       "id": "c061cad4-885b-4521-9d09-b207c951b777",
@@ -63,17 +39,19 @@
         "operation": "get",
         "dataTableId": {
           "__rl": true,
-          "value": "ynG4Tnq1YsFG5XCM",
-          "mode": "list",
-          "cachedResultName": "Waypoint_Ptmp_DB",
-          "cachedResultUrl": "/projects/FrVfm13rbs02W3ED/datatables/ynG4Tnq1YsFG5XCM"
+          "mode": "name",
+          "value": "={{ $json['User Name']+\"_LLM_DB\" }}"
         },
         "matchType": "allConditions",
         "filters": {
           "conditions": [
             {
-              "keyName": "tag",
+              "keyName": "Tag",
               "keyValue": "Draft Task"
+            },
+            {
+              "keyName": "Task_status",
+              "keyValue": "0"
             }
           ]
         }
@@ -99,7 +77,7 @@
           "conditions": [
             {
               "id": "bb7397d6-9c5d-4656-b516-f4d51a55a311",
-              "leftValue": "={{ $json.due_date }}",
+              "leftValue": "={{ $json.Due_date }}",
               "rightValue": "null",
               "operator": {
                 "type": "string",
@@ -123,27 +101,274 @@
     },
     {
       "parameters": {
-        "task": "U3FmYzFoal9JMWxZNGRpTA",
+        "assignments": {
+          "assignments": [
+            {
+              "id": "b99ad580-4022-496d-9068-c32907e332a1",
+              "name": "User Name",
+              "value": "Waypoint",
+              "type": "string"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        -240,
+        160
+      ],
+      "id": "5ce3ec6d-e086-4d2c-82cf-9d26c7bb4dac",
+      "name": "Edit Fields"
+    },
+    {
+      "parameters": {
+        "task": "MTQ2NTkwOTI4MDE4OTEwMDMwNDg6MDow",
         "title": "={{ $json.Subject }}",
         "additionalFields": {
-          "dueDate": "={{ $('Get row(s)1').item.json.createdAt }}",
-          "notes": "={{ $json.snippet }}"
+          "dueDate": "={{ $json.Due_date }}",
+          "notes": "={{ $json.Mail_Summary }}"
         }
       },
       "type": "n8n-nodes-base.googleTasks",
       "typeVersion": 1,
       "position": [
         400,
-        128
+        256
       ],
-      "id": "20dadcd7-8fb3-42aa-b16d-ec16df0cb709",
-      "name": "Create a task1",
+      "id": "7821a1c8-b8bc-4f03-a901-4b00a806f9c0",
+      "name": "Create a task",
       "credentials": {
         "googleTasksOAuth2Api": {
-          "id": "lYKVpCrxtLqnT5n6",
-          "name": "Astor_Tasks"
+          "id": "qz1LtcaE6G08u1yY",
+          "name": "Google Tasks account"
         }
       }
+    },
+    {
+      "parameters": {
+        "task": "MTQ2NTkwOTI4MDE4OTEwMDMwNDg6MDow",
+        "title": "={{ $json.Subject }}",
+        "additionalFields": {
+          "dueDate": "={{ $('Get row(s)1').item.json.createdAt }}",
+          "notes": "=Mail Summary : {{ $json.Mail_Summary }}\nMail Url : https://mail.google.com/mail/u/4/#inbox/{{ $('Get row(s)1').item.json.Mail_id }}"
+        }
+      },
+      "type": "n8n-nodes-base.googleTasks",
+      "typeVersion": 1,
+      "position": [
+        400,
+        48
+      ],
+      "id": "20dadcd7-8fb3-42aa-b16d-ec16df0cb709",
+      "name": "Create a task with no due date",
+      "credentials": {
+        "googleTasksOAuth2Api": {
+          "id": "qz1LtcaE6G08u1yY",
+          "name": "Google Tasks account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "operation": "update",
+        "dataTableId": {
+          "__rl": true,
+          "value": "={{ $('Edit Fields').item.json['User Name']+\"_LLM_DB\" }}",
+          "mode": "name"
+        },
+        "matchType": "allConditions",
+        "filters": {
+          "conditions": [
+            {
+              "keyName": "ThreadId",
+              "keyValue": "={{ $('Get row(s)1').item.json.ThreadId }}"
+            }
+          ]
+        },
+        "columns": {
+          "mappingMode": "defineBelow",
+          "value": {
+            "Task_status": "1"
+          },
+          "matchingColumns": [],
+          "schema": [
+            {
+              "id": "From",
+              "displayName": "From",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "readOnly": false,
+              "removed": true
+            },
+            {
+              "id": "To",
+              "displayName": "To",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "readOnly": false,
+              "removed": true
+            },
+            {
+              "id": "Subject",
+              "displayName": "Subject",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "readOnly": false,
+              "removed": true
+            },
+            {
+              "id": "Mail_Summary",
+              "displayName": "Mail_Summary",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "readOnly": false,
+              "removed": true
+            },
+            {
+              "id": "ThreadId",
+              "displayName": "ThreadId",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "readOnly": false,
+              "removed": true
+            },
+            {
+              "id": "Tag",
+              "displayName": "Tag",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "readOnly": false,
+              "removed": true
+            },
+            {
+              "id": "Due_date",
+              "displayName": "Due_date",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "readOnly": false,
+              "removed": true
+            },
+            {
+              "id": "Task_status",
+              "displayName": "Task_status",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "readOnly": false,
+              "removed": false
+            },
+            {
+              "id": "Lable_status",
+              "displayName": "Lable_status",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "readOnly": false,
+              "removed": true
+            },
+            {
+              "id": "Mail_id",
+              "displayName": "Mail_id",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "readOnly": false,
+              "removed": true
+            }
+          ],
+          "attemptToConvertTypes": false,
+          "convertFieldsToString": false
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.dataTable",
+      "typeVersion": 1.1,
+      "position": [
+        608,
+        144
+      ],
+      "id": "710ee731-d8ea-4f9a-a8b0-926d0fe34e2e",
+      "name": "Update row(s)"
+    },
+    {
+      "parameters": {
+        "operation": "get",
+        "dataTableId": {
+          "__rl": true,
+          "value": "={{ $('Edit Fields').item.json['User Name'] +\"_Mail_DB\"}}",
+          "mode": "name"
+        },
+        "matchType": "allConditions"
+      },
+      "type": "n8n-nodes-base.dataTable",
+      "typeVersion": 1.1,
+      "position": [
+        784,
+        64
+      ],
+      "id": "ffd1366b-0aed-4a98-bf87-5fd3af821671",
+      "name": "Get  Mail row(s)"
+    },
+    {
+      "parameters": {
+        "operation": "get",
+        "dataTableId": {
+          "__rl": true,
+          "value": "={{ $('Edit Fields').item.json['User Name'] +\"_LLM_DB\"}}",
+          "mode": "name"
+        },
+        "matchType": "allConditions",
+        "filters": {
+          "conditions": [
+            {
+              "keyName": "ThreadId",
+              "keyValue": "={{ $json.ThreadId }}"
+            }
+          ]
+        }
+      },
+      "type": "n8n-nodes-base.dataTable",
+      "typeVersion": 1.1,
+      "position": [
+        928,
+        240
+      ],
+      "id": "08f3ef62-78fb-4538-a8e9-e88e9b5b3e5b",
+      "name": "Get LLM Data"
+    },
+    {
+      "parameters": {
+        "mode": "combineBySql",
+        "query": "SELECT \n    m.*, \n    l.Tag\nFROM \n    input1 AS m\nLEFT JOIN (\n    -- 先在子查詢中將 LLM Table 根據 ThreadId 去重\n    SELECT ThreadId, MAX(Tag) as Tag -- 或使用 MAX(id) 來鎖定某一筆\n    FROM input2\n    GROUP BY ThreadId\n) AS l \nON m.ThreadId = l.ThreadId;",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.merge",
+      "typeVersion": 3.2,
+      "position": [
+        1136,
+        112
+      ],
+      "id": "17f95cd6-b15e-45e8-ad0a-b06b5e3a6b50",
+      "name": "Merge"
     }
   ],
   "pinData": {},
@@ -152,7 +377,7 @@
       "main": [
         [
           {
-            "node": "Get row(s)1",
+            "node": "Edit Fields",
             "type": "main",
             "index": 0
           }
@@ -174,7 +399,7 @@
       "main": [
         [
           {
-            "node": "Create a task1",
+            "node": "Create a task with no due date",
             "type": "main",
             "index": 0
           }
@@ -187,6 +412,77 @@
           }
         ]
       ]
+    },
+    "Edit Fields": {
+      "main": [
+        [
+          {
+            "node": "Get row(s)1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Create a task with no due date": {
+      "main": [
+        [
+          {
+            "node": "Update row(s)",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Create a task": {
+      "main": [
+        [
+          {
+            "node": "Update row(s)",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Update row(s)": {
+      "main": [
+        [
+          {
+            "node": "Get  Mail row(s)",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Get LLM Data": {
+      "main": [
+        [
+          {
+            "node": "Merge",
+            "type": "main",
+            "index": 1
+          }
+        ]
+      ]
+    },
+    "Get  Mail row(s)": {
+      "main": [
+        [
+          {
+            "node": "Merge",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "Get LLM Data",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
     }
   },
   "active": false,
@@ -194,8 +490,9 @@
     "executionOrder": "v1",
     "availableInMCP": false
   },
-  "versionId": "05186d4f-5c60-40e1-909d-6b71d55cbd1d",
+  "versionId": "e0b1a6e4-a2a6-4c3b-ae8d-f07e59498885",
   "meta": {
+    "templateCredsSetupCompleted": true,
     "instanceId": "1d439c4d93c659f0613cd7f721f34cb95f1d33a263ec1a3aee355b8efbb09a1d"
   },
   "id": "i0FZ4MCHMn3pU2-oZbSNy",
