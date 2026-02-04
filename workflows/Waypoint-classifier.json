@@ -14,7 +14,7 @@
       "type": "n8n-nodes-base.scheduleTrigger",
       "typeVersion": 1.3,
       "position": [
-        -288,
+        -448,
         -16
       ],
       "id": "76de3dab-0526-4ada-b4cb-5831c8ce8574",
@@ -34,7 +34,7 @@
       "type": "@n8n/n8n-nodes-langchain.lmChatOpenAi",
       "typeVersion": 1.3,
       "position": [
-        1728,
+        1296,
         192
       ],
       "id": "ecc3721c-2014-4d15-a8b2-9aaeb3848e42",
@@ -48,65 +48,15 @@
     },
     {
       "parameters": {
-        "resource": "table",
-        "operation": "create",
-        "tableName": "={{ $('Edit Fields').item.json['User Name']+\"_LLM_DB\" }}",
-        "columns": {
-          "column": [
-            {
-              "name": "From"
-            },
-            {
-              "name": "To"
-            },
-            {
-              "name": "Subject"
-            },
-            {
-              "name": "Mail_Summary"
-            },
-            {
-              "name": "ThreadId"
-            },
-            {
-              "name": "Tag"
-            },
-            {
-              "name": "Due_date"
-            },
-            {
-              "name": "Task_status"
-            },
-            {
-              "name": "Lable_status"
-            },
-            {
-              "name": "Mail_id"
-            }
-          ]
-        },
-        "options": {}
-      },
-      "type": "n8n-nodes-base.dataTable",
-      "typeVersion": 1.1,
-      "position": [
-        608,
-        176
-      ],
-      "id": "49130d42-cc4b-47db-8147-6ac24055b3df",
-      "name": "Create a data table"
-    },
-    {
-      "parameters": {
         "promptType": "define",
-        "text": "=You are an email thread analysis assistant. Your goal is to analyze a series of emails within the SAME thread and output a single, consolidated JSON: {\"ThreadId\": \"string\", \"Subject\": \"string\", \"tag\":\"Noise|Draft Task|FYI|Forward\", \"dueDate\":\"RFC3339\", \"mail_summary\": \"Summary\"}. Do not output any other text.\n\n### CRITICAL INSTRUCTIONS\n1. **Case Sensitivity**: You MUST use lowercase for all keys: \"threadId\", \"subject\", \"tag\", \"dueDate\", \"mail_summary\".\n2. **threadId Extraction**: Use the exact value from \"Target_ThreadId\" below.\n3. **subject Selection**: Use the Subject from the OLDEST email in the thread.\n4. **JSON Safety**: Do not use double quotes inside the summary or subject strings unless they are escaped with a backslash (\\\"). Output everything on a single line.\n\n【Consolidation Logic】\n    1. **threadId**: Set to the value of \"Target_ThreadId\".\n    2. **subject**: Use the subject line from the earliest message in the sequence.\n    3. **Tagging**: Determine the tag based on the LATEST state of the conversation. If a task was requested in an early email but completed/cancelled in a later one, the tag should be FYI or Noise.\n    4. **DueDate**: Extract the most relevant deadline from the entire thread. If multiple deadlines exist, pick the one from the most recent message or the one that is explicitly final.\n    5. **Summary**: Summarize the entire progression of the conversation in 1-2 sentences. Prioritize information from the latest Receive_Time.Avoid special characters and ensure the text is JSON-safe.If the body is empty or contains no meaningful text, output \"No content available\".\n\n\n【Classification Rules (By Priority)】\n  - Forward: Clearly intended to be forwarded to others, a specific contact, or another department (e.g., \"Please forward,\" \"Please have XX handle this,\" \"Not my responsibility\").\n\n  - FYI: Any other informational content requiring no action. Policy Exceptions: Any mention of \"Privacy Notice/Terms/Policy updates\" is strictly FYI. Even if phrases like \"Please visit the link to review/read/check/understand/refer to/view/confirm update contents\" appear, it remains FYI.\nChange to Draft Task ONLY if a \"Mandatory Action\" is required: Agree/Accept (click to agree, re-agree, opt-in/out), Reply, Submit/Upload/Fill out a form, Set up/Verify, Pay/Unsubscribe, or if \"Consequence Keywords\" appear (\"Must,\" \"Otherwise,\" \"If not completed... will result in,\" \"Stop service,\" \"Restrict use\").\n\"Confirm\" Distinction: \"Confirming content\" = FYI; \"Confirming completion of an action\" (Reply/Submit/Payment/Setup) = Draft Task.\n\n  - Draft Task: Contains a clear request for you to do something, deliver, reply, or process (Note: \"Please\" does not automatically mean a task; if it's just to read/review/check content → FYI).\n\n  - Noise: Advertisements, promotions, newsletters, push notifications, social media updates, or automated system notifications requiring no action.\n\n\n【dueDate Extraction】\n  - Only fill this if there is a clear deadline semantics (Deadline, Latest, Please by, Expiry, Before, By) or a mandatory action timeframe.\n  - If multiple dates exist, choose the one most likely to be the deadline and the closest to the current date.\n - If only a date is provided without a time → default to 23:59:59.000Z of that day.\n - If no deadline exists → null; if a relative time cannot be converted to a specific date → null.\n\nOutput must be an RFC3339/ISO8601 UTC formatted string (e.g., 2026-01-21T13:54:39.000Z).\n\n【Input】\nTarget_ThreadId: {{ $('Code in JavaScript').item.json.ThreadId }}\nCurrent Time: {{ $now }}\n\nEmail Contents (ordered by Receive_Time):\n{{ JSON.stringify($json.Content) }}",
+        "text": "=You are an email thread analysis assistant. Your goal is to analyze a series of emails within the SAME thread and output a single, consolidated JSON including both thread-level metadata and specific action items.\n\n### CRITICAL INSTRUCTIONS\n1. **Case Sensitivity**: You MUST use lowercase snake_case for all keys: \"thread_id\", \"subject\", \"tag\", \"mail_summary\", \"tasks\", \"task_subject\", \"task_content\", \"due_date\".\n2. **threadId Extraction**: Use the exact value from \"Target_ThreadId\" below.\n3. **subject Selection**: Use the Subject from the OLDEST email in the thread.\n4. **JSON Safety**: Do not use double quotes inside strings unless escaped (\\\"). Ensure the entire output is a single valid JSON object.\n\n【Consolidation Logic】\n    1. **thread_id**: Set to the value of \"Target_ThreadId\".\n    2. **subject**: Use the subject line from the earliest message in the sequence.\n    3. **tag**: Determine the tag based on the LATEST state of the conversation. If a task was requested in an early email but completed/cancelled in a later one, the tag should be FYI or Noise.\n    4. **mail_summary**: Summarize the entire progression of the conversation in 1-2 sentences. Prioritize information from the latest Receive_Time.Avoid special characters and ensure the text is JSON-safe.If the body is empty or contains no meaningful text, output \"No content available\".\n\n【Action Item Extraction (Task Level)】\n1. **tasks Array**: Identify ALL current actionable items in the thread. \n2. **task_subject**: Create a short, action-oriented title for each specific task.\n3. **task_content**: Provide specific details for each action.\n4. **due_date (Inside Tasks)**: \n   - Extract the deadline for this SPECIFIC task in RFC3339 format.\n   - **IMPORTANT**: If no deadline exists, you MUST output the literal string \"null\" (with double quotes in the JSON, e.g., \"due_date\": \"null\"). \n   - **DO NOT** use the JSON null value. It MUST be a string.\n5. **De-duplication**: If a task was mentioned but later retracted or marked as finished in the thread, do NOT include it in the \"tasks\" array.\n\n\n【Classification Rules (By Priority)】\n- **Forward**: Clearly intended to be forwarded to others, a specific contact, or another department (e.g., \"Please forward,\" \"Please have XX handle this,\" \"Not my responsibility\").\n\n- **FYI**: Any other informational content requiring no action. Policy Exceptions: Any mention of \"Privacy Notice/Terms/Policy updates\" is strictly FYI. Even if phrases like \"Please visit the link to review/read/check/understand/refer to/view/confirm update contents\" appear, it remains FYI.\nChange to Draft Task ONLY if a \"Mandatory Action\" is required: Agree/Accept (click to agree, re-agree, opt-in/out), Reply, Submit/Upload/Fill out a form, Set up/Verify, Pay/Unsubscribe, or if \"Consequence Keywords\" appear (\"Must,\" \"Otherwise,\" \"If not completed... will result in,\" \"Stop service,\" \"Restrict use\").\n\"Confirm\" Distinction: \"Confirming content\" = FYI; \"Confirming completion of an action\" (Reply/Submit/Payment/Setup) = Draft Task.\n\n- **Draft Task**: Contains a clear request for you to do something, deliver, reply, or process (Note: \"Please\" does not automatically mean a task; if it's just to read/review/check content → FYI).\n\n - **Noise**: Advertisements, promotions, newsletters, push notifications, social media updates, or automated system notifications requiring no action.\n\n【Input】\nTarget_ThreadId: {{ $json.thread_id }}\nCurrent Time: {{ $now }}\n\nEmail Contents (ordered by Receive_Time):\n{{ JSON.stringify($json.Content) }}\n\n### MANDATORY OUTPUT RULES\n1. **Tool Usage**: You MUST ONLY provide the result via the `format_final_json_response` tool. DO NOT add any conversational text before or after.\n2. **Enum Strictness**: The \"tag\" value MUST BE EXACTLY one of: \"Noise\", \"Draft Task\", \"FYI\", \"Forward\". Check capitalization carefully.\n3. **Empty Tasks**: If there are no action items, the \"tasks\" field MUST be an empty array: `[]`.\n4. **String Null**: For \"due_date\", if no date is found, you MUST use the literal string \"null\".\n5. **JSON Safety**: All text in \"mail_summary\" and \"task_content\" must be single-line, with all double quotes escaped (\\\") and no actual newline characters.\n",
         "hasOutputParser": true,
         "options": {}
       },
       "type": "@n8n/n8n-nodes-langchain.agent",
       "typeVersion": 3.1,
       "position": [
-        1744,
+        1296,
         -16
       ],
       "id": "9daf6945-00c3-405d-8cd2-efac00a60999",
@@ -115,13 +65,13 @@
     {
       "parameters": {
         "schemaType": "manual",
-        "inputSchema": "{\n  \"type\": \"object\",\n  \"properties\": {\n    \"threadId\": {\n      \"type\": \"string\",\n      \"description\": \"The ID provided as Target_ThreadId.\"\n    },\n    \"subject\": {\n      \"type\": \"string\",\n      \"description\": \"The oldest subject line.\"\n    },\n    \"tag\": {\n      \"type\": \"string\",\n      \"enum\": [\"Noise\", \"Draft Task\", \"FYI\", \"Forward\"],\n      \"description\": \"Task category.\"\n    },\n    \"dueDate\": {\n      \"type\": [\"string\", \"null\"],\n      \"format\": \"date-time\",\n      \"description\": \"RFC3339 date or null.\"\n    },\n    \"mail_summary\": {\n      \"type\": \"string\",\n      \"description\": \"JSON-safe summary.\"\n    }\n  },\n  \"required\": [\"threadId\", \"subject\", \"tag\", \"dueDate\", \"mail_summary\"]\n}"
+        "inputSchema": "{\n  \"type\": \"object\",\n  \"properties\": {\n    \"thread_id\": {\n      \"type\": \"string\",\n      \"description\": \"The exact ID provided as Target_ThreadId.\"\n    },\n    \"subject\": {\n      \"type\": \"string\",\n      \"description\": \"The oldest subject line from the thread.\"\n    },\n    \"mail_summary\": {\n      \"type\": \"string\",\n      \"description\": \"A 1-2 sentence JSON-safe summary of the thread progression.\"\n    },\n    \"tag\": {\n      \"type\": \"string\",\n      \"enum\": [\"Noise\", \"Draft Task\", \"FYI\", \"Forward\"],\n      \"description\": \"Consolidated tag for the entire thread.\"\n    },\n    \"tasks\": {\n      \"type\": \"array\",\n      \"description\": \"A list of action items to be inserted into Task_Table.\",\n      \"items\": {\n        \"type\": \"object\",\n        \"properties\": {\n          \"task_subject\": {\n            \"type\": \"string\",\n            \"description\": \"Concise title for the task_subject column.\"\n          },\n          \"task_content\": {\n            \"type\": \"string\",\n            \"description\": \"Detailed description for the task_content column.\"\n          },\n          \"due_date\": {\n            \"type\": \"string\",\n            \"description\": \"RFC3339 deadline or null.\"\n          }\n        },\n        \"required\": [\"task_subject\", \"task_content\", \"due_date\"]\n      }\n    }\n  },\n  \"required\": [\"thread_id\", \"subject\", \"mail_summary\", \"tag\", \"tasks\"]\n}"
       },
       "type": "@n8n/n8n-nodes-langchain.outputParserStructured",
       "typeVersion": 1.3,
       "position": [
-        1888,
-        192
+        1456,
+        176
       ],
       "id": "de2b89c4-b7ad-44c4-8666-5779039a2597",
       "name": "Structured Output Parser"
@@ -143,7 +93,7 @@
       "type": "n8n-nodes-base.set",
       "typeVersion": 3.4,
       "position": [
-        -64,
+        -224,
         -16
       ],
       "id": "68c2a315-8472-4b76-9c8e-0fc02a840b13",
@@ -177,7 +127,7 @@
       "type": "n8n-nodes-base.if",
       "typeVersion": 2.3,
       "position": [
-        384,
+        224,
         -16
       ],
       "id": "75f18988-5033-4530-b548-f767c7d430a9",
@@ -188,14 +138,14 @@
         "operation": "get",
         "dataTableId": {
           "__rl": true,
-          "value": "={{ $('Edit Fields').item.json['User Name']+\"_Mail_DB\" }}",
+          "value": "={{ $('Edit Fields').item.json['User Name']+\"_Mail_Table\" }}",
           "mode": "name"
         },
         "matchType": "allConditions",
         "filters": {
           "conditions": [
             {
-              "keyName": "LLM_status",
+              "keyName": "llm_status",
               "keyValue": "0"
             }
           ]
@@ -205,7 +155,7 @@
       "type": "n8n-nodes-base.dataTable",
       "typeVersion": 1.1,
       "position": [
-        832,
+        528,
         -16
       ],
       "id": "d1a03737-125f-46cf-9acc-47f6c18ed7e1",
@@ -216,36 +166,39 @@
         "operation": "get",
         "dataTableId": {
           "__rl": true,
-          "value": "={{ $('Edit Fields').item.json['User Name']+\"_LLM_DB\" }}",
+          "value": "={{ $('Edit Fields').item.json['User Name']+\"_LLM_Table\" }}",
           "mode": "name"
         },
         "matchType": "allConditions",
         "filters": {
           "conditions": [
             {
-              "keyName": "ThreadId",
-              "keyValue": "={{ $json.ThreadId }}"
+              "keyName": "thread_id",
+              "keyValue": "={{ $json.thread_id }}"
             }
           ]
-        }
+        },
+        "returnAll": true
       },
       "type": "n8n-nodes-base.dataTable",
       "typeVersion": 1.1,
       "position": [
-        976,
-        160
+        656,
+        128
       ],
       "id": "4f3d04e2-a3b4-4ab0-a80a-d3683ab8f55b",
-      "name": "Get LLM Data"
+      "name": "Get LLM Data",
+      "executeOnce": false,
+      "alwaysOutputData": true
     },
     {
       "parameters": {
-        "jsCode": "const threadMap = {};\n// 處理 SQL 合併後的每一行\nfor (const item of $input.all()) {\n  const d = item.json;\n  if (!threadMap[d.ThreadId]) {\n    threadMap[d.ThreadId] = { ThreadId: d.ThreadId, Content: [] };\n  }\n  threadMap[d.ThreadId].Content.push({\n    Subject: d.Subject,\n    Receive_Time: d.time_val,\n    Snippet: d.content_val\n  });\n}\nreturn Object.values(threadMap).map(v => ({ json: v }));"
+        "jsCode": "const threadMap = {};\n// 處理 SQL 合併後的每一行\nfor (const item of $input.all()) {\n  const d = item.json;\n  if (!threadMap[d.thread_id]) {\n    threadMap[d.thread_id] = { thread_id: d.thread_id, Content: [] };\n  }\n  threadMap[d.thread_id].Content.push({\n    subject: d.subject,\n    receive_time: d.time_val,\n    snippet: d.content_val\n  });\n}\nreturn Object.values(threadMap).map(v => ({ json: v }));"
       },
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
       "position": [
-        1552,
+        1104,
         -16
       ],
       "id": "3c867788-3c6e-4adb-802f-4db3fc107b77",
@@ -255,13 +208,15 @@
     {
       "parameters": {
         "mode": "combineBySql",
-        "query": "SELECT ThreadId,Subject,updatedAt AS time_val, Mail_Summary AS content_val FROM input2\nUNION ALL\nSELECT ThreadId,Subject,Receive_Time AS time_val, Snippet AS content_val FROM input1\nORDER BY time_val ASC;",
-        "options": {}
+        "query": "SELECT thread_id,subject,updatedAt AS time_val, mail_summary AS content_val FROM input2\nWHERE thread_id IS NOT NULL\nUNION ALL\nSELECT thread_id,subject,receive_time AS time_val, snippet AS content_val FROM input1\nWHERE thread_id IS NOT NULL\nORDER BY time_val ASC;",
+        "options": {
+          "emptyQueryResult": "empty"
+        }
       },
       "type": "n8n-nodes-base.merge",
       "typeVersion": 3.2,
       "position": [
-        1360,
+        944,
         -16
       ],
       "id": "cacb3d6b-114e-4b71-852d-61600e780970",
@@ -274,23 +229,24 @@
       "type": "n8n-nodes-base.removeDuplicates",
       "typeVersion": 2,
       "position": [
-        1200,
-        160
+        816,
+        144
       ],
       "id": "2b1ce79e-c4d9-4fef-bee9-24f835833f35",
-      "name": "Remove Duplicates"
+      "name": "Remove Duplicates",
+      "alwaysOutputData": true
     },
     {
       "parameters": {
         "resource": "table",
         "options": {
-          "filterName": "={{ $('Edit Fields').item.json['User Name']+\"_LLM_DB\" }}"
+          "filterName": "={{ $('Edit Fields').item.json['User Name']+\"_LLM_Table\" }}"
         }
       },
       "type": "n8n-nodes-base.dataTable",
       "typeVersion": 1.1,
       "position": [
-        160,
+        0,
         -16
       ],
       "id": "21b86c69-51cd-4667-ad4d-aaf5193355f4",
@@ -302,54 +258,33 @@
         "operation": "upsert",
         "dataTableId": {
           "__rl": true,
-          "value": "={{ $('Edit Fields').first(0).json[\"User Name\"] + \"_LLM_DB\" }}",
+          "value": "={{ $('Edit Fields').first(0).json[\"User Name\"] + \"_LLM_Table\" }}",
           "mode": "name"
         },
         "matchType": "allConditions",
         "filters": {
           "conditions": [
             {
-              "keyName": "ThreadId",
-              "keyValue": "={{ $node[\"Code in JavaScript\"].json[\"ThreadId\"] }}"
+              "keyName": "thread_id",
+              "keyValue": "={{ $json.output.thread_id }}"
             }
           ]
         },
         "columns": {
           "mappingMode": "defineBelow",
           "value": {
-            "Tag": "={{ $json.output.tag }}",
-            "Due_date": "={{ $json.output.dueDate }}",
-            "Task_status": "0",
-            "Lable_status": "0",
-            "ThreadId": "={{ $('Code in JavaScript').item.json.ThreadId }}",
-            "Mail_Summary": "={{ $json.output.mail_summary }}",
-            "Subject": "={{ $json.output.subject }}"
+            "thread_id": "={{ $json.output.thread_id }}",
+            "subject": "={{ $json.output.subject }}",
+            "mail_summary": "={{ $json.output.mail_summary }}",
+            "tag": "={{ $json.output.tag }}",
+            "label_status": "0",
+            "task_status": "0"
           },
           "matchingColumns": [],
           "schema": [
             {
-              "id": "From",
-              "displayName": "From",
-              "required": false,
-              "defaultMatch": false,
-              "display": true,
-              "type": "string",
-              "readOnly": false,
-              "removed": true
-            },
-            {
-              "id": "To",
-              "displayName": "To",
-              "required": false,
-              "defaultMatch": false,
-              "display": true,
-              "type": "string",
-              "readOnly": false,
-              "removed": true
-            },
-            {
-              "id": "Subject",
-              "displayName": "Subject",
+              "id": "thread_id",
+              "displayName": "thread_id",
               "required": false,
               "defaultMatch": false,
               "display": true,
@@ -358,8 +293,8 @@
               "removed": false
             },
             {
-              "id": "Mail_Summary",
-              "displayName": "Mail_Summary",
+              "id": "subject",
+              "displayName": "subject",
               "required": false,
               "defaultMatch": false,
               "display": true,
@@ -368,8 +303,8 @@
               "removed": false
             },
             {
-              "id": "ThreadId",
-              "displayName": "ThreadId",
+              "id": "mail_summary",
+              "displayName": "mail_summary",
               "required": false,
               "defaultMatch": false,
               "display": true,
@@ -378,8 +313,8 @@
               "removed": false
             },
             {
-              "id": "Tag",
-              "displayName": "Tag",
+              "id": "tag",
+              "displayName": "tag",
               "required": false,
               "defaultMatch": false,
               "display": true,
@@ -388,8 +323,8 @@
               "removed": false
             },
             {
-              "id": "Due_date",
-              "displayName": "Due_date",
+              "id": "label_status",
+              "displayName": "label_status",
               "required": false,
               "defaultMatch": false,
               "display": true,
@@ -398,34 +333,14 @@
               "removed": false
             },
             {
-              "id": "Task_status",
-              "displayName": "Task_status",
+              "id": "task_status",
+              "displayName": "task_status",
               "required": false,
               "defaultMatch": false,
               "display": true,
               "type": "string",
               "readOnly": false,
               "removed": false
-            },
-            {
-              "id": "Lable_status",
-              "displayName": "Lable_status",
-              "required": false,
-              "defaultMatch": false,
-              "display": true,
-              "type": "string",
-              "readOnly": false,
-              "removed": false
-            },
-            {
-              "id": "Mail_id",
-              "displayName": "Mail_id",
-              "required": false,
-              "defaultMatch": false,
-              "display": true,
-              "type": "string",
-              "readOnly": false,
-              "removed": true
             }
           ],
           "attemptToConvertTypes": false,
@@ -436,11 +351,410 @@
       "type": "n8n-nodes-base.dataTable",
       "typeVersion": 1.1,
       "position": [
-        2128,
-        -16
+        1744,
+        -48
       ],
       "id": "c367138f-3b03-4f91-a8db-c869569989fd",
-      "name": "Upsert row(s)"
+      "name": "Upsert LLM Data"
+    },
+    {
+      "parameters": {
+        "fieldToSplitOut": "output.tasks",
+        "include": "allOtherFields",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.splitOut",
+      "typeVersion": 1,
+      "position": [
+        1840,
+        112
+      ],
+      "id": "3001702d-d740-4137-9a53-265cbbf4baf9",
+      "name": "Split Out"
+    },
+    {
+      "parameters": {
+        "resource": "table",
+        "options": {
+          "filterName": "={{ $node['Edit Fields'].data[\"User Name\"]+\"_Task_Table\" }}"
+        }
+      },
+      "type": "n8n-nodes-base.dataTable",
+      "typeVersion": 1.1,
+      "position": [
+        0,
+        -160
+      ],
+      "id": "1dd44fb2-991e-4602-901e-2b4b8f0c5eb1",
+      "name": "Check Task Table if exist",
+      "alwaysOutputData": true
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "9bf98a9f-d5d7-40b6-9284-929a7caf5b40",
+              "name": "task_id",
+              "value": "null",
+              "type": "string"
+            },
+            {
+              "id": "bfaefd0e-fa0a-46ad-96ec-8d6cde824192",
+              "name": "thread_id",
+              "value": "={{ $json.output.thread_id }}",
+              "type": "string"
+            },
+            {
+              "id": "4b9ad218-601a-4983-9b45-c8b6d1b3b13c",
+              "name": "task_subject",
+              "value": "={{ $json['output.tasks'].task_subject }}",
+              "type": "string"
+            },
+            {
+              "id": "bf6c1ee6-4be9-42f6-b9f4-a5d5b187023d",
+              "name": "task_content",
+              "value": "={{ $json['output.tasks'].task_content }}",
+              "type": "string"
+            },
+            {
+              "id": "f7e74099-2c69-4463-9de7-399f4f8d33c5",
+              "name": "due_date",
+              "value": "={{ $json['output.tasks'].due_date }}",
+              "type": "string"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        2032,
+        96
+      ],
+      "id": "e7f215da-ec51-44cd-b083-9115b9234e12",
+      "name": "Set Task Table Value"
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 3
+          },
+          "conditions": [
+            {
+              "id": "810fa7eb-efd7-4943-82c2-44c63d2dba9e",
+              "leftValue": "={{ $json.name }}",
+              "rightValue": "",
+              "operator": {
+                "type": "string",
+                "operation": "notEmpty",
+                "singleValue": true
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.3,
+      "position": [
+        160,
+        -240
+      ],
+      "id": "8f09718c-20ac-45c9-a5a7-900af59de78f",
+      "name": "If1"
+    },
+    {
+      "parameters": {
+        "resource": "table",
+        "operation": "create",
+        "tableName": "={{ $('Edit Fields').item.json['User Name']+\"_Task_Table\" }}",
+        "columns": {
+          "column": [
+            {
+              "name": "task_id"
+            },
+            {
+              "name": "thread_id"
+            },
+            {
+              "name": "task_subject"
+            },
+            {
+              "name": "task_content"
+            },
+            {
+              "name": "due_date"
+            },
+            {
+              "name": "create_task_status"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.dataTable",
+      "typeVersion": 1.1,
+      "position": [
+        400,
+        -272
+      ],
+      "id": "9da08c2b-9a28-4242-bed9-c4dc56264e6e",
+      "name": "Create a Task table"
+    },
+    {
+      "parameters": {
+        "resource": "table",
+        "operation": "create",
+        "tableName": "={{ $('Edit Fields').item.json['User Name']+\"_LLM_Table\" }}",
+        "columns": {
+          "column": [
+            {
+              "name": "thread_id"
+            },
+            {
+              "name": "subject"
+            },
+            {
+              "name": "mail_summary"
+            },
+            {
+              "name": "tag"
+            },
+            {
+              "name": "label_status"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.dataTable",
+      "typeVersion": 1.1,
+      "position": [
+        368,
+        128
+      ],
+      "id": "49130d42-cc4b-47db-8147-6ac24055b3df",
+      "name": "Create a LLM table"
+    },
+    {
+      "parameters": {
+        "operation": "update",
+        "dataTableId": {
+          "__rl": true,
+          "value": "={{ $('Edit Fields').first(0).json[\"User Name\"] + \"_Mail_Table\" }}",
+          "mode": "name"
+        },
+        "matchType": "allConditions",
+        "filters": {
+          "conditions": [
+            {
+              "keyName": "thread_id",
+              "keyValue": "={{ $json.output.thread_id }}"
+            }
+          ]
+        },
+        "columns": {
+          "mappingMode": "defineBelow",
+          "value": {
+            "llm_status": "1"
+          },
+          "matchingColumns": [],
+          "schema": [
+            {
+              "id": "mail_id",
+              "displayName": "mail_id",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "readOnly": false,
+              "removed": true
+            },
+            {
+              "id": "thread_id",
+              "displayName": "thread_id",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "readOnly": false,
+              "removed": true
+            },
+            {
+              "id": "receive_time",
+              "displayName": "receive_time",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "readOnly": false,
+              "removed": true
+            },
+            {
+              "id": "from",
+              "displayName": "from",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "readOnly": false,
+              "removed": true
+            },
+            {
+              "id": "to",
+              "displayName": "to",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "readOnly": false,
+              "removed": true
+            },
+            {
+              "id": "subject",
+              "displayName": "subject",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "readOnly": false,
+              "removed": true
+            },
+            {
+              "id": "snippet",
+              "displayName": "snippet",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "readOnly": false,
+              "removed": true
+            },
+            {
+              "id": "llm_status",
+              "displayName": "llm_status",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "readOnly": false,
+              "removed": false
+            }
+          ],
+          "attemptToConvertTypes": false,
+          "convertFieldsToString": false
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.dataTable",
+      "typeVersion": 1.1,
+      "position": [
+        1760,
+        -208
+      ],
+      "id": "af9bbcb1-ea6d-4428-a916-610f44859293",
+      "name": "Update Mail Table"
+    },
+    {
+      "parameters": {
+        "dataTableId": {
+          "__rl": true,
+          "value": "={{ $('Edit Fields').first().json[\"User Name\"] + \"_Task_Table\" }}",
+          "mode": "name"
+        },
+        "columns": {
+          "mappingMode": "defineBelow",
+          "value": {
+            "task_id": "={{ $json.task_id }}",
+            "thread_id": "={{ $json.thread_id }}",
+            "task_content": "={{ $json.task_content }}",
+            "task_subject": "={{ $json.task_subject }}",
+            "due_date": "={{ $json.due_date }}",
+            "create_task_status": "0"
+          },
+          "matchingColumns": [],
+          "schema": [
+            {
+              "id": "task_id",
+              "displayName": "task_id",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "readOnly": false,
+              "removed": false
+            },
+            {
+              "id": "thread_id",
+              "displayName": "thread_id",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "readOnly": false,
+              "removed": false
+            },
+            {
+              "id": "task_subject",
+              "displayName": "task_subject",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "readOnly": false,
+              "removed": false
+            },
+            {
+              "id": "task_content",
+              "displayName": "task_content",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "readOnly": false,
+              "removed": false
+            },
+            {
+              "id": "due_date",
+              "displayName": "due_date",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "readOnly": false,
+              "removed": false
+            },
+            {
+              "id": "create_task_status",
+              "displayName": "create_task_status",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "readOnly": false,
+              "removed": false
+            }
+          ],
+          "attemptToConvertTypes": false,
+          "convertFieldsToString": false
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.dataTable",
+      "typeVersion": 1.1,
+      "position": [
+        2240,
+        112
+      ],
+      "id": "5318bde9-0a8f-4d95-82b9-b747aeac3cd5",
+      "name": "Insert row"
     }
   ],
   "pinData": {},
@@ -467,22 +781,21 @@
         ]
       ]
     },
-    "Create a data table": {
-      "main": [
-        [
-          {
-            "node": "Get Mail Data",
-            "type": "main",
-            "index": 0
-          }
-        ]
-      ]
-    },
     "AI Agent": {
       "main": [
         [
           {
-            "node": "Upsert row(s)",
+            "node": "Upsert LLM Data",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "Split Out",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "Update Mail Table",
             "type": "main",
             "index": 0
           }
@@ -507,6 +820,11 @@
             "node": "list LLM Table",
             "type": "main",
             "index": 0
+          },
+          {
+            "node": "Check Task Table if exist",
+            "type": "main",
+            "index": 0
           }
         ]
       ]
@@ -522,7 +840,7 @@
         ],
         [
           {
-            "node": "Create a data table",
+            "node": "Create a LLM table",
             "type": "main",
             "index": 0
           }
@@ -599,6 +917,84 @@
           }
         ]
       ]
+    },
+    "Split Out": {
+      "main": [
+        [
+          {
+            "node": "Set Task Table Value",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Set Task Table Value": {
+      "main": [
+        [
+          {
+            "node": "Insert row",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Check Task Table if exist": {
+      "main": [
+        [
+          {
+            "node": "If1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "If1": {
+      "main": [
+        [
+          {
+            "node": "Get Mail Data",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Create a Task table",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Create a Task table": {
+      "main": [
+        [
+          {
+            "node": "Get Mail Data",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Create a LLM table": {
+      "main": [
+        [
+          {
+            "node": "Get Mail Data",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Upsert LLM Data": {
+      "main": [
+        []
+      ]
     }
   },
   "active": false,
@@ -606,7 +1002,7 @@
     "executionOrder": "v1",
     "availableInMCP": false
   },
-  "versionId": "0fc3deea-8c88-4443-92b1-4a2ceedf690e",
+  "versionId": "3795f266-84ee-4ac1-b9bb-f9e4c00ccb68",
   "meta": {
     "templateCredsSetupCompleted": true,
     "instanceId": "1d439c4d93c659f0613cd7f721f34cb95f1d33a263ec1a3aee355b8efbb09a1d"

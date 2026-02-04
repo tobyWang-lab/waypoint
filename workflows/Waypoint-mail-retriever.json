@@ -6,7 +6,8 @@
         "rule": {
           "interval": [
             {
-              "field": "seconds"
+              "field": "cronExpression",
+              "expression": "0 0 8,12,18 * * *"
             }
           ]
         }
@@ -23,15 +24,15 @@
     {
       "parameters": {
         "operation": "getAll",
-        "limit": 10,
+        "returnAll": true,
         "filters": {
-          "receivedAfter": "="
+          "q": "=after:{{ $json.slots[0].after }} \nbefore:{{ $json.slots[0].before }}\n"
         }
       },
       "type": "n8n-nodes-base.gmail",
       "typeVersion": 2.2,
       "position": [
-        496,
+        896,
         -16
       ],
       "id": "039e085b-09ab-45e5-8436-582676f38124",
@@ -49,14 +50,14 @@
         "operation": "rowNotExists",
         "dataTableId": {
           "__rl": true,
-          "value": "={{ $('Edit Fields').item.json['User Name']+\"_Mail_DB\" }}",
+          "value": "={{ $('Edit Fields').item.json['User Name']+\"_Mail_Table\" }}",
           "mode": "name"
         },
         "matchType": "allConditions",
         "filters": {
           "conditions": [
             {
-              "keyName": "Mail_id",
+              "keyName": "mail_id",
               "keyValue": "={{ $('Get many messages').item.json.id }}"
             }
           ]
@@ -65,7 +66,7 @@
       "type": "n8n-nodes-base.dataTable",
       "typeVersion": 1.1,
       "position": [
-        832,
+        1072,
         -16
       ],
       "id": "3e59cfa2-f21a-4e14-b782-537cbf7e92c7",
@@ -122,8 +123,8 @@
       "type": "n8n-nodes-base.if",
       "typeVersion": 2.3,
       "position": [
-        112,
-        -16
+        128,
+        0
       ],
       "id": "f8d24caf-cfbf-4ad2-a0d3-22860e5977c1",
       "name": "If"
@@ -132,32 +133,32 @@
       "parameters": {
         "resource": "table",
         "operation": "create",
-        "tableName": "={{ $('Edit Fields').item.json['User Name']+\"_Mail_DB\" }}",
+        "tableName": "={{ $('Edit Fields').item.json['User Name']+\"_Mail_Table\" }}",
         "columns": {
           "column": [
             {
-              "name": "Mail_id"
+              "name": "mail_id"
             },
             {
-              "name": "ThreadId"
+              "name": "thread_id"
             },
             {
-              "name": "Receive_Time"
+              "name": "receive_time"
             },
             {
-              "name": "From"
+              "name": "from"
             },
             {
-              "name": "To"
+              "name": "to"
             },
             {
-              "name": "Subject"
+              "name": "subject"
             },
             {
-              "name": "Snippet"
+              "name": "snippet"
             },
             {
-              "name": "LLM_status"
+              "name": "llm_status"
             }
           ]
         },
@@ -178,13 +179,13 @@
         "returnAll": false,
         "limit": 1,
         "options": {
-          "filterName": "={{ $json['User Name']+\"_Mail_DB\" }}"
+          "filterName": "={{ $json['User Name']+\"_Mail_Table\" }}"
         }
       },
       "type": "n8n-nodes-base.dataTable",
       "typeVersion": 1.1,
       "position": [
-        -32,
+        -48,
         0
       ],
       "id": "71c8aa95-2b1d-499f-af6c-e014b7afec91",
@@ -195,17 +196,26 @@
       "parameters": {
         "dataTableId": {
           "__rl": true,
-          "value": "={{ $('Edit Fields').item.json['User Name']+\"_Mail_DB\" }}",
+          "value": "={{ $('Edit Fields').item.json['User Name']+\"_Mail_Table\" }}",
           "mode": "name"
         },
         "columns": {
           "mappingMode": "defineBelow",
-          "value": {},
+          "value": {
+            "mail_id": "={{ $('Get many messages').item.json.id }}",
+            "thread_id": "={{ $('Get many messages').item.json.threadId }}",
+            "subject": "={{ $('Get many messages').item.json.Subject }}",
+            "to": "={{ $('Get many messages').item.json.To }}",
+            "from": "={{ $('Get many messages').item.json.From }}",
+            "receive_time": "={{ new Date(parseInt($json.internalDate) + 8 * 60 * 60 * 1000).toISOString() }}",
+            "snippet": "={{ $('Get many messages').item.json.snippet }}",
+            "llm_status": "0"
+          },
           "matchingColumns": [],
           "schema": [
             {
-              "id": "Mail_id",
-              "displayName": "Mail_id",
+              "id": "mail_id",
+              "displayName": "mail_id",
               "required": false,
               "defaultMatch": false,
               "display": true,
@@ -214,8 +224,8 @@
               "removed": false
             },
             {
-              "id": "ThreadId",
-              "displayName": "ThreadId",
+              "id": "thread_id",
+              "displayName": "thread_id",
               "required": false,
               "defaultMatch": false,
               "display": true,
@@ -224,8 +234,8 @@
               "removed": false
             },
             {
-              "id": "Receive_Time",
-              "displayName": "Receive_Time",
+              "id": "receive_time",
+              "displayName": "receive_time",
               "required": false,
               "defaultMatch": false,
               "display": true,
@@ -234,8 +244,8 @@
               "removed": false
             },
             {
-              "id": "From",
-              "displayName": "From",
+              "id": "from",
+              "displayName": "from",
               "required": false,
               "defaultMatch": false,
               "display": true,
@@ -244,8 +254,8 @@
               "removed": false
             },
             {
-              "id": "To",
-              "displayName": "To",
+              "id": "to",
+              "displayName": "to",
               "required": false,
               "defaultMatch": false,
               "display": true,
@@ -254,8 +264,8 @@
               "removed": false
             },
             {
-              "id": "Subject",
-              "displayName": "Subject",
+              "id": "subject",
+              "displayName": "subject",
               "required": false,
               "defaultMatch": false,
               "display": true,
@@ -264,8 +274,8 @@
               "removed": false
             },
             {
-              "id": "Snippet",
-              "displayName": "Snippet",
+              "id": "snippet",
+              "displayName": "snippet",
               "required": false,
               "defaultMatch": false,
               "display": true,
@@ -274,8 +284,8 @@
               "removed": false
             },
             {
-              "id": "LLM_status",
-              "displayName": "LLM_status",
+              "id": "llm_status",
+              "displayName": "llm_status",
               "required": false,
               "defaultMatch": false,
               "display": true,
@@ -292,11 +302,39 @@
       "type": "n8n-nodes-base.dataTable",
       "typeVersion": 1.1,
       "position": [
-        1056,
+        1280,
         -16
       ],
       "id": "460b0656-5b01-4960-9981-1fb1f1fc8d73",
       "name": "Insert mail data"
+    },
+    {
+      "parameters": {
+        "jsCode": "// 目前時間（台灣）\nconst now = DateTime.now().setZone('Asia/Taipei');\n\n// 用「今天」當基準\nconst base = now.startOf('day');\n\nconst slots = [\n  { label: '08-12', startHour: 8, endHour: 12 },\n  { label: '12-18', startHour: 12, endHour: 18 },\n  { label: '18-24', startHour: 18, endHour: 24 },\n];\n\n// 找出「現在時間落在哪個 slot」\nconst currentSlot = slots.find(s => {\n  const start = base.set({ hour: s.startHour });\n  const end = base.set({ hour: s.endHour });\n  return now >= start && now < end;\n});\n\n// ❌ 如果現在不是 08–24（例如凌晨），直接不輸出\nif (!currentSlot) {\n  return [];\n}\n\n// 算該 slot 的 after / before\nconst start = base.set({\n  hour: currentSlot.startHour,\n  minute: 0,\n  second: 0,\n  millisecond: 0,\n});\n\nconst end = base.set({\n  hour: currentSlot.endHour,\n  minute: 0,\n  second: 0,\n  millisecond: 0,\n});\n\n// ✅ 只回傳「一個 item」\nreturn [\n  {\n    json: {\n      label: currentSlot.label,\n      after: Math.floor(start.toSeconds()),   // Gmail 要秒\n      before: Math.floor(end.toSeconds()),\n      date: base.toISODate(),\n    }\n  }\n];\n"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        512,
+        -16
+      ],
+      "id": "f635226a-a359-476a-829c-01cbef70fad7",
+      "name": "Code in JavaScript"
+    },
+    {
+      "parameters": {
+        "mode": "raw",
+        "jsonOutput": "={\n  \"slots\": [\n    {\n      \"label\": \"{{ $json.label }}\",\n      \"after\": {{ $json.after }},\n      \"before\": {{ $json.before }}\n    },\n  ]\n}\n",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        704,
+        -16
+      ],
+      "id": "067927cc-cbc8-4524-8358-ba48cd14d2a2",
+      "name": "Edit Fields2"
     }
   ],
   "pinData": {},
@@ -349,7 +387,7 @@
       "main": [
         [
           {
-            "node": "Get many messages",
+            "node": "Code in JavaScript",
             "type": "main",
             "index": 0
           }
@@ -367,7 +405,7 @@
       "main": [
         [
           {
-            "node": "Get many messages",
+            "node": "Code in JavaScript",
             "type": "main",
             "index": 0
           }
@@ -389,14 +427,36 @@
       "main": [
         []
       ]
+    },
+    "Code in JavaScript": {
+      "main": [
+        [
+          {
+            "node": "Edit Fields2",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Edit Fields2": {
+      "main": [
+        [
+          {
+            "node": "Get many messages",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
     }
   },
-  "active": false,
+  "active": true,
   "settings": {
     "executionOrder": "v1",
     "availableInMCP": false
   },
-  "versionId": "1c3f6a53-e278-4538-bfc3-520a22a1b2c5",
+  "versionId": "a56485a7-de7d-462c-b2db-f96ca16bdee6",
   "meta": {
     "templateCredsSetupCompleted": true,
     "instanceId": "1d439c4d93c659f0613cd7f721f34cb95f1d33a263ec1a3aee355b8efbb09a1d"
