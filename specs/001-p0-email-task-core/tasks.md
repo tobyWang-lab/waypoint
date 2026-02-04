@@ -95,6 +95,17 @@ description: "Task list for P0 Email-to-Task Core Pipeline"
 - [ ] T015 [US5] Add Gmail label node to apply "WAYPOINT-Processed" after successful sync in workflows/waypoint-email-to-tasks.json. DoD: label applied only on sync success; Verify: node placement/conditions in workflows/waypoint-email-to-tasks.json.
 - [ ] T016 [US5] Create Error Trigger workflow in workflows/waypoint-error-trigger.json emitting non-PII events per contracts/error-event.schema.json. DoD: error workflow references schema fields and excludes PII; Verify: review workflows/waypoint-error-trigger.json.
 
+---
+
+## Phase 6: Notification — User Story 6 (Priority: P1)
+
+**Goal**: Deliver a high-density intelligence summary to Telegram for immediate awareness.
+
+- [X] T020 [US6] Create Telegram notification workflow in workflows/Waypoint_Telegram.json. DoD: workflow exists and can send messages; Verify: manual trigger test.
+- [X] T021 [US6] Implement high-density Markdown V2 template for Telegram reports (Total processed, Actionable/FYI/Noise counts). DoD: template matches Hackathon standards; Verify: inspect template in workflows/Waypoint_Telegram.json.
+- [X] T022 [US6] Aggregate Draft Task details in Telegram summary (Subject, ThreadId, AI Summary, SourceLink). DoD: summary includes critical action items; Verify: integration test.
+- [ ] T023 [US6] Implement scheduled summary delivery (e.g., 08:00, 12:00, 18:00) in workflows/Waypoint_Telegram.json. DoD: scheduler configured; Verify: inspect trigger settings.
+
 **Checkpoint**: User Story 5 is independently testable and delivers tasks to Google Tasks with deduplication.
 
 ---

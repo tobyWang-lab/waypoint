@@ -14,8 +14,9 @@ This specification defines the P0 (Critical) features required to build the core
 - **Epic 1 - Signal Acquisition**: OAuth Gmail integration, email ingestion, and noise filtering
 - **Epic 2 - Intelligence & Navigation**: Intent classification and waypoint extraction using LLM
 - **Epic 3 - Synchronization**: Google Tasks sync
+- **Epic 4 - Notification**: Telegram intelligence delivery
 
-The **core pipeline sequence** is: Email Ingestion → AI Noise Filtering → AI Intent/Extraction → Direct Google Tasks Sync → Gmail Labeling ("WAYPOINT-Processed").
+The **core pipeline sequence** is: Email Ingestion → AI Noise Filtering → AI Intent/Extraction → Direct Google Tasks Sync → Gmail Labeling ("WAYPOINT-Processed") → Telegram Notification Summary.
 
 All features adhere to the Constitution's **Stateless Processing** principle—no email content or attachments persist beyond processing.
 
@@ -70,7 +71,8 @@ This specification defines the Email-to-Task pipeline as an n8n workflow. All co
 
 - Task Cards are delivered **directly to Google Tasks** with no intermediate Dashboard
 - n8n workflow remains stateless and headless; no external frontend persistence is required
-- **Core pipeline sequence**: Email Ingestion → AI Noise Filtering → AI Intent/Extraction → Direct Google Tasks Sync → Gmail Labeling ("WAYPOINT-Processed")
+- **Telegram Intelligence Delivery**: Summarized reports of daily activity (Tasks, FYI, Noise counts) and critical action items are sent to a designated Telegram chat.
+- **Core pipeline sequence**: Email Ingestion → AI Noise Filtering → AI Intent/Extraction → Direct Google Tasks Sync → Gmail Labeling ("WAYPOINT-Processed") → Telegram Notification Summary
 
 ### Google Tasks Field Mapping
 
@@ -390,6 +392,7 @@ The Task Card is the primary output artifact. It adheres to the **Stateless Proc
 - **SC-011**: Google Tasks sync successfully creates tasks in user's Google Tasks list for 95%+ of Task Cards with status "success".
 - **SC-012**: Task Cards synced to Google Tasks contain correct title, due date, and notes with stakeholders/actionItems/sourceLink.
 - **SC-013**: Emails successfully synced receive "WAYPOINT-Processed" label preventing duplicate task creation.
+- **SC-014**: Telegram notifications are delivered within 5 minutes of the scheduled trigger time with 100% template compliance.
 
 ---
 
@@ -410,6 +413,7 @@ The Task Card is the primary output artifact. It adheres to the **Stateless Proc
 
 - **Gmail API**: For OAuth authorization, email fetching, and labeling (via n8n Gmail node).
 - **Google Tasks API**: For task creation and sync (via extended OAuth credentials).
+- **Telegram Bot API**: For intelligence delivery and notifications.
 - **LLM Provider API**: For intent classification and waypoint extraction (via n8n AI Agent node).
 - **Docker**: For self-hosted n8n deployment.
 - **n8n**: Workflow automation platform (self-hosted via Docker).
