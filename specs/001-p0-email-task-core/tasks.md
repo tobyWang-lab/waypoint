@@ -89,9 +89,9 @@ description: "Task list for P0 Email-to-Task Core Pipeline"
 **Independent Test**: Create a Task Card and confirm Google Task creation, RFC 3339 due date, and Gmail labeling.
 
 - [ ] T012 [US5] Add transform step to convert ISO 8601 dueDate to RFC 3339 (omit on failure) in workflows/waypoint-email-to-tasks.json. DoD: conversion applied or omitted with statusReason; Verify: transform logic in workflows/waypoint-email-to-tasks.json.
-- [ ] T013 [US5] Add Google Tasks lookup/list step to check idempotency key (ThreadId/MessageId) in notes before create to handle mail loops. DoD: existing ThreadId skips or updates task; Verify: list+filter logic in workflows/waypoint-email-to-tasks.json.
-- [ ] T013a [US5] Enhance deduplication to handle mail loops: If ThreadId exists, append new snippet to existing task instead of creating new one. DoD: no duplicate tasks for same thread; Verify: integration test with multi-email thread.
-- [ ] T014 [US5] Add Google Tasks create node mapping to contracts/google-tasks-sync.request.json in workflows/waypoint-email-to-tasks.json. DoD: title/notes/due mapping matches contract; Verify: node fields and mapping in workflows/waypoint-email-to-tasks.json.
+- [X] T013 [US5] Add Google Tasks lookup/list step to check idempotency key (ThreadId/MessageId) in notes before create to handle mail loops. DoD: existing ThreadId skips or updates task; Verify: list+filter logic in workflows/waypoint-email-to-tasks.json.
+- [X] T013a [US5] Enhance deduplication to handle mail loops: If ThreadId exists, append new snippet to existing task instead of creating new one. DoD: no duplicate tasks for same thread; Verify: integration test with multi-email thread.
+- [X] T014 [US5] Add Google Tasks create node mapping to contracts/google-tasks-sync.request.json in workflows/waypoint-email-to-tasks.json. DoD: title/notes/due mapping matches contract; Verify: node fields and mapping in workflows/waypoint-email-to-tasks.json.
 - [ ] T015 [US5] Add Gmail label node to apply "WAYPOINT-Processed" after successful sync in workflows/waypoint-email-to-tasks.json. DoD: label applied only on sync success; Verify: node placement/conditions in workflows/waypoint-email-to-tasks.json.
 - [ ] T016 [US5] Create Error Trigger workflow in workflows/waypoint-error-trigger.json emitting non-PII events per contracts/error-event.schema.json. DoD: error workflow references schema fields and excludes PII; Verify: review workflows/waypoint-error-trigger.json.
 
