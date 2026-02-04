@@ -6,7 +6,8 @@
         "rule": {
           "interval": [
             {
-              "field": "seconds"
+              "field": "cronExpression",
+              "expression": "0 0 8,12,18 * * *"
             }
           ]
         }
@@ -14,7 +15,7 @@
       "type": "n8n-nodes-base.scheduleTrigger",
       "typeVersion": 1.3,
       "position": [
-        -176,
+        -400,
         0
       ],
       "id": "c3d583d3-52cd-4789-9a90-434dba389add",
@@ -23,13 +24,15 @@
     {
       "parameters": {
         "operation": "getAll",
-        "limit": 20,
-        "filters": {}
+        "returnAll": true,
+        "filters": {
+          "q": "=after:{{ $json.slots[0].after }} \nbefore:{{ $json.slots[0].before }}\n"
+        }
       },
       "type": "n8n-nodes-base.gmail",
       "typeVersion": 2.2,
       "position": [
-        496,
+        896,
         -16
       ],
       "id": "039e085b-09ab-45e5-8436-582676f38124",
@@ -37,47 +40,125 @@
       "webhookId": "ef17005e-189a-4fc3-9f55-4d2ce6dbb591",
       "credentials": {
         "gmailOAuth2": {
-          "id": "Vwsa6HG8qejjh8fB",
-          "name": "Astor_Gmail"
+          "id": "6XxzwJNQIwuocXy5",
+          "name": "joe.at.waypoint@gmail"
         }
       }
     },
     {
-      "parameters": {},
-      "type": "n8n-nodes-base.limit",
-      "typeVersion": 1,
+      "parameters": {
+        "operation": "rowNotExists",
+        "dataTableId": {
+          "__rl": true,
+          "value": "={{ $('Edit Fields').item.json['User Name']+\"_Mail_Table\" }}",
+          "mode": "name"
+        },
+        "matchType": "allConditions",
+        "filters": {
+          "conditions": [
+            {
+              "keyName": "mail_id",
+              "keyValue": "={{ $('Get many messages').item.json.id }}"
+            }
+          ]
+        }
+      },
+      "type": "n8n-nodes-base.dataTable",
+      "typeVersion": 1.1,
       "position": [
-        656,
+        1072,
         -16
       ],
-      "id": "3ed1454b-176a-4138-9137-07b068d4219b",
-      "name": "Limit",
-      "disabled": true
+      "id": "3e59cfa2-f21a-4e14-b782-537cbf7e92c7",
+      "name": "If row does not exist"
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "b99ad580-4022-496d-9068-c32907e332a1",
+              "name": "User Name",
+              "value": "Waypoint",
+              "type": "string"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        -208,
+        0
+      ],
+      "id": "c49ce4ba-f042-4966-8d91-4001b613db37",
+      "name": "Edit Fields"
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 3
+          },
+          "conditions": [
+            {
+              "id": "2c53610b-7d93-430f-8e8a-3204287089f2",
+              "leftValue": "={{ $json.name }}",
+              "rightValue": "",
+              "operator": {
+                "type": "string",
+                "operation": "notEmpty",
+                "singleValue": true
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.3,
+      "position": [
+        128,
+        0
+      ],
+      "id": "f8d24caf-cfbf-4ad2-a0d3-22860e5977c1",
+      "name": "If"
     },
     {
       "parameters": {
         "resource": "table",
         "operation": "create",
-        "tableName": "Waypoint_Mail_DB",
+        "tableName": "={{ $('Edit Fields').item.json['User Name']+\"_Mail_Table\" }}",
         "columns": {
           "column": [
             {
-              "name": "From"
+              "name": "mail_id"
             },
             {
-              "name": "To"
+              "name": "thread_id"
             },
             {
-              "name": "Subject"
+              "name": "receive_time"
+            },
+            {
+              "name": "from"
+            },
+            {
+              "name": "to"
+            },
+            {
+              "name": "subject"
             },
             {
               "name": "snippet"
             },
             {
-              "name": "threadId"
-            },
-            {
-              "name": "status"
+              "name": "llm_status"
             }
           ]
         },
@@ -86,36 +167,55 @@
       "type": "n8n-nodes-base.dataTable",
       "typeVersion": 1.1,
       "position": [
-        304,
-        128
+        320,
+        112
       ],
-      "id": "1f355b9e-a9f0-4dc0-bf5b-5e37f59d86fd",
-      "name": "Create a data table"
+      "id": "e6a9d147-3afb-45cd-836e-d1ef68e37508",
+      "name": "Create a mail table"
+    },
+    {
+      "parameters": {
+        "resource": "table",
+        "returnAll": false,
+        "limit": 1,
+        "options": {
+          "filterName": "={{ $json['User Name']+\"_Mail_Table\" }}"
+        }
+      },
+      "type": "n8n-nodes-base.dataTable",
+      "typeVersion": 1.1,
+      "position": [
+        -48,
+        0
+      ],
+      "id": "71c8aa95-2b1d-499f-af6c-e014b7afec91",
+      "name": "check mail table if exist",
+      "alwaysOutputData": true
     },
     {
       "parameters": {
         "dataTableId": {
           "__rl": true,
-          "value": "nrnwFAr2mz3O24LD",
-          "mode": "list",
-          "cachedResultName": "Waypoint_Mail_DB",
-          "cachedResultUrl": "/projects/FrVfm13rbs02W3ED/datatables/nrnwFAr2mz3O24LD"
+          "value": "={{ $('Edit Fields').item.json['User Name']+\"_Mail_Table\" }}",
+          "mode": "name"
         },
         "columns": {
           "mappingMode": "defineBelow",
           "value": {
-            "threadId": "={{ $('Get many messages').item.json.threadId }}",
+            "mail_id": "={{ $('Get many messages').item.json.id }}",
+            "thread_id": "={{ $('Get many messages').item.json.threadId }}",
+            "subject": "={{ $('Get many messages').item.json.Subject }}",
+            "to": "={{ $('Get many messages').item.json.To }}",
+            "from": "={{ $('Get many messages').item.json.From }}",
+            "receive_time": "={{ new Date(parseInt($json.internalDate) + 8 * 60 * 60 * 1000).toISOString() }}",
             "snippet": "={{ $('Get many messages').item.json.snippet }}",
-            "Subject": "={{ $('Get many messages').item.json.Subject }}",
-            "To": "={{ $('Get many messages').item.json.To }}",
-            "From": "={{ $('Get many messages').item.json.From }}",
-            "status": "0"
+            "llm_status": "0"
           },
           "matchingColumns": [],
           "schema": [
             {
-              "id": "From",
-              "displayName": "From",
+              "id": "mail_id",
+              "displayName": "mail_id",
               "required": false,
               "defaultMatch": false,
               "display": true,
@@ -124,8 +224,8 @@
               "removed": false
             },
             {
-              "id": "To",
-              "displayName": "To",
+              "id": "thread_id",
+              "displayName": "thread_id",
               "required": false,
               "defaultMatch": false,
               "display": true,
@@ -134,8 +234,38 @@
               "removed": false
             },
             {
-              "id": "Subject",
-              "displayName": "Subject",
+              "id": "receive_time",
+              "displayName": "receive_time",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "readOnly": false,
+              "removed": false
+            },
+            {
+              "id": "from",
+              "displayName": "from",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "readOnly": false,
+              "removed": false
+            },
+            {
+              "id": "to",
+              "displayName": "to",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "readOnly": false,
+              "removed": false
+            },
+            {
+              "id": "subject",
+              "displayName": "subject",
               "required": false,
               "defaultMatch": false,
               "display": true,
@@ -154,18 +284,8 @@
               "removed": false
             },
             {
-              "id": "threadId",
-              "displayName": "threadId",
-              "required": false,
-              "defaultMatch": false,
-              "display": true,
-              "type": "string",
-              "readOnly": false,
-              "removed": false
-            },
-            {
-              "id": "status",
-              "displayName": "status",
+              "id": "llm_status",
+              "displayName": "llm_status",
               "required": false,
               "defaultMatch": false,
               "display": true,
@@ -182,95 +302,39 @@
       "type": "n8n-nodes-base.dataTable",
       "typeVersion": 1.1,
       "position": [
-        1008,
+        1280,
         -16
       ],
-      "id": "28ad70bc-8e74-4602-b4ea-0182c53c2d90",
-      "name": "Insert row"
+      "id": "460b0656-5b01-4960-9981-1fb1f1fc8d73",
+      "name": "Insert mail data"
     },
     {
       "parameters": {
-        "operation": "rowNotExists",
-        "dataTableId": {
-          "__rl": true,
-          "value": "nrnwFAr2mz3O24LD",
-          "mode": "list",
-          "cachedResultName": "Waypoint_Mail_DB",
-          "cachedResultUrl": "/projects/FrVfm13rbs02W3ED/datatables/nrnwFAr2mz3O24LD"
-        },
-        "matchType": "allConditions",
-        "filters": {
-          "conditions": [
-            {
-              "keyName": "threadId",
-              "keyValue": "={{ $('Get many messages').item.json.threadId }}"
-            }
-          ]
-        }
+        "jsCode": "// 目前時間（台灣）\nconst now = DateTime.now().setZone('Asia/Taipei');\n\n// 用「今天」當基準\nconst base = now.startOf('day');\n\nconst slots = [\n  { label: '08-12', startHour: 8, endHour: 12 },\n  { label: '12-18', startHour: 12, endHour: 18 },\n  { label: '18-24', startHour: 18, endHour: 24 },\n];\n\n// 找出「現在時間落在哪個 slot」\nconst currentSlot = slots.find(s => {\n  const start = base.set({ hour: s.startHour });\n  const end = base.set({ hour: s.endHour });\n  return now >= start && now < end;\n});\n\n// ❌ 如果現在不是 08–24（例如凌晨），直接不輸出\nif (!currentSlot) {\n  return [];\n}\n\n// 算該 slot 的 after / before\nconst start = base.set({\n  hour: currentSlot.startHour,\n  minute: 0,\n  second: 0,\n  millisecond: 0,\n});\n\nconst end = base.set({\n  hour: currentSlot.endHour,\n  minute: 0,\n  second: 0,\n  millisecond: 0,\n});\n\n// ✅ 只回傳「一個 item」\nreturn [\n  {\n    json: {\n      label: currentSlot.label,\n      after: Math.floor(start.toSeconds()),   // Gmail 要秒\n      before: Math.floor(end.toSeconds()),\n      date: base.toISODate(),\n    }\n  }\n];\n"
       },
-      "type": "n8n-nodes-base.dataTable",
-      "typeVersion": 1.1,
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
       "position": [
-        816,
+        512,
         -16
       ],
-      "id": "07a13e40-f5ec-445f-8b18-3598da6603c1",
-      "name": "If row does not exist1"
+      "id": "f635226a-a359-476a-829c-01cbef70fad7",
+      "name": "Code in JavaScript"
     },
     {
       "parameters": {
-        "resource": "table",
-        "returnAll": false,
-        "limit": 1,
-        "options": {
-          "filterName": "Waypoint_Mail_DB"
-        }
+        "mode": "raw",
+        "jsonOutput": "={\n  \"slots\": [\n    {\n      \"label\": \"{{ $json.label }}\",\n      \"after\": {{ $json.after }},\n      \"before\": {{ $json.before }}\n    },\n  ]\n}\n",
+        "options": {}
       },
-      "type": "n8n-nodes-base.dataTable",
-      "typeVersion": 1.1,
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
       "position": [
-        -16,
-        0
+        704,
+        -16
       ],
-      "id": "71c8aa95-2b1d-499f-af6c-e014b7afec91",
-      "name": "List data tables1",
-      "alwaysOutputData": true
-    },
-    {
-      "parameters": {
-        "conditions": {
-          "options": {
-            "caseSensitive": true,
-            "leftValue": "",
-            "typeValidation": "strict",
-            "version": 3
-          },
-          "conditions": [
-            {
-              "id": "9202d810-6fea-48f2-84ef-708f692b62d9",
-              "leftValue": "={{ $json.name }}",
-              "rightValue": "",
-              "operator": {
-                "type": "string",
-                "operation": "notEmpty",
-                "singleValue": true
-              }
-            }
-          ],
-          "combinator": "and"
-        },
-        "options": {
-          "ignoreCase": false
-        }
-      },
-      "type": "n8n-nodes-base.if",
-      "typeVersion": 2.3,
-      "position": [
-        144,
-        0
-      ],
-      "id": "74edc656-b79b-4da9-8bd6-aa3e69306921",
-      "name": "If1"
+      "id": "067927cc-cbc8-4524-8358-ba48cd14d2a2",
+      "name": "Edit Fields2"
     }
   ],
   "pinData": {},
@@ -279,7 +343,7 @@
       "main": [
         [
           {
-            "node": "List data tables1",
+            "node": "Edit Fields",
             "type": "main",
             "index": 0
           }
@@ -290,69 +354,96 @@
       "main": [
         [
           {
-            "node": "Limit",
+            "node": "If row does not exist",
             "type": "main",
             "index": 0
           }
         ]
       ]
     },
-    "Limit": {
+    "If row does not exist": {
       "main": [
         [
           {
-            "node": "If row does not exist1",
+            "node": "Insert mail data",
             "type": "main",
             "index": 0
           }
         ]
       ]
     },
-    "Create a data table": {
+    "Edit Fields": {
       "main": [
         [
           {
-            "node": "Get many messages",
+            "node": "check mail table if exist",
             "type": "main",
             "index": 0
           }
         ]
       ]
     },
-    "If row does not exist1": {
+    "If": {
       "main": [
         [
           {
-            "node": "Insert row",
-            "type": "main",
-            "index": 0
-          }
-        ]
-      ]
-    },
-    "List data tables1": {
-      "main": [
-        [
-          {
-            "node": "If1",
-            "type": "main",
-            "index": 0
-          }
-        ]
-      ]
-    },
-    "If1": {
-      "main": [
-        [
-          {
-            "node": "Get many messages",
+            "node": "Code in JavaScript",
             "type": "main",
             "index": 0
           }
         ],
         [
           {
-            "node": "Create a data table",
+            "node": "Create a mail table",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Create a mail table": {
+      "main": [
+        [
+          {
+            "node": "Code in JavaScript",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "check mail table if exist": {
+      "main": [
+        [
+          {
+            "node": "If",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Insert mail data": {
+      "main": [
+        []
+      ]
+    },
+    "Code in JavaScript": {
+      "main": [
+        [
+          {
+            "node": "Edit Fields2",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Edit Fields2": {
+      "main": [
+        [
+          {
+            "node": "Get many messages",
             "type": "main",
             "index": 0
           }
@@ -360,12 +451,12 @@
       ]
     }
   },
-  "active": false,
+  "active": true,
   "settings": {
     "executionOrder": "v1",
     "availableInMCP": false
   },
-  "versionId": "d4d5aa60-b735-4311-8f55-c0b8613f4cd4",
+  "versionId": "a56485a7-de7d-462c-b2db-f96ca16bdee6",
   "meta": {
     "templateCredsSetupCompleted": true,
     "instanceId": "1d439c4d93c659f0613cd7f721f34cb95f1d33a263ec1a3aee355b8efbb09a1d"

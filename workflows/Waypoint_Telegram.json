@@ -1,0 +1,432 @@
+{
+  "name": "Waypoint_Telegram",
+  "nodes": [
+    {
+      "parameters": {
+        "operation": "get",
+        "dataTableId": {
+          "__rl": true,
+          "value": "={{ $('Edit Fields').item.json['User Name'] +\"_Mail_Table\"}}",
+          "mode": "name"
+        },
+        "matchType": "allConditions"
+      },
+      "type": "n8n-nodes-base.dataTable",
+      "typeVersion": 1.1,
+      "position": [
+        -112,
+        16
+      ],
+      "id": "366b2bfe-11bf-43cc-a5d8-d6947481027c",
+      "name": "Get  Mail row(s)"
+    },
+    {
+      "parameters": {
+        "operation": "get",
+        "dataTableId": {
+          "__rl": true,
+          "value": "={{ $('Edit Fields').item.json['User Name'] +\"_LLM_Table\"}}",
+          "mode": "name"
+        },
+        "matchType": "allConditions",
+        "filters": {
+          "conditions": [
+            {
+              "keyName": "thread_id",
+              "keyValue": "={{ $json.thread_id }}"
+            }
+          ]
+        }
+      },
+      "type": "n8n-nodes-base.dataTable",
+      "typeVersion": 1.1,
+      "position": [
+        16,
+        176
+      ],
+      "id": "c6d1efe9-f1e4-42ba-b054-d36424d7c8c8",
+      "name": "Get LLM Data"
+    },
+    {
+      "parameters": {
+        "mode": "combineBySql",
+        "query": "SELECT \n    m.*,\n    l.Tag,\n    l.Mail_Summary\nFROM \n    input1 AS m\nLEFT JOIN input2 AS l\n  ON m.ThreadId = l.ThreadId;",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.merge",
+      "typeVersion": 3.2,
+      "position": [
+        304,
+        32
+      ],
+      "id": "f88f62c5-b7b1-4312-88fc-e6f796d993bb",
+      "name": "Merge"
+    },
+    {
+      "parameters": {
+        "rule": {
+          "interval": [
+            {
+              "field": "seconds"
+            }
+          ]
+        }
+      },
+      "type": "n8n-nodes-base.scheduleTrigger",
+      "typeVersion": 1.3,
+      "position": [
+        -464,
+        16
+      ],
+      "id": "5895cd02-7447-4c9e-84b0-20f6e829942b",
+      "name": "Schedule Trigger"
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "b99ad580-4022-496d-9068-c32907e332a1",
+              "name": "User Name",
+              "value": "Waypoint",
+              "type": "string"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        -272,
+        16
+      ],
+      "id": "4e885ab1-a89d-42f7-b7da-13c212e784e6",
+      "name": "Edit Fields"
+    },
+    {
+      "parameters": {
+        "options": {}
+      },
+      "type": "n8n-nodes-base.removeDuplicates",
+      "typeVersion": 2,
+      "position": [
+        160,
+        176
+      ],
+      "id": "e3959674-b0fd-4d22-997f-610e79be1244",
+      "name": "Remove Duplicates"
+    },
+    {
+      "parameters": {
+        "jsCode": "const items = $input.all();\nlet total = items.length;\nlet stats = {\n  \"Noise\": 0,\n  \"FYI\": 0,\n  \"Forward\": 0,\n  \"Draft Task\": 0\n};\n\n// 用於追蹤已處理過的 ThreadId，避免重複\nlet processedThreadIds = new Set();\nlet draftTaskDetails = [];\n\n// 遍歷所有郵件進行統計與資訊提取\nitems.forEach(item => {\n  const data = item.json;\n  const tag = data.Tag;\n  const threadId = data.ThreadId;\n  \n  // 1. 統計每一封信的標籤數量 (統計總量)\n  if (stats.hasOwnProperty(tag)) {\n    stats[tag]++;\n  }\n  \n  // 2. 針對 Draft Task 進行去重處理\n  if (tag === \"Draft Task\" && !processedThreadIds.has(threadId)) {\n    // 標記此 ThreadId 已處理\n    processedThreadIds.add(threadId);\n    \n    // 將此討論串的唯一資訊加入清單\n    draftTaskDetails.push(`Subject: ${data.Subject || '無主旨'}\\nThreadId: ${threadId}\\nSummary: ${data.Mail_Summary || '無摘要'}\\nSource_Link: https://mail.google.com/mail/u/0/#inbox/${threadId}`);\n  }\n});\n\n// 組合 Draft Task 區塊文字\nconst draftInfoText = draftTaskDetails.length > 0 \n  ? draftTaskDetails.join('\\n-------------------\\n') \n  : \"目前沒有待辦任務。\";\n\n// 格式化最終 Telegram 訊息\nconst message = `Hi Toby,\n你今天總共有 ${total} 封信件，\nNoise ${stats[\"Noise\"]} 封\nFYI ${stats[\"FYI\"]} 封\nForward ${stats[\"Forward\"]} 封\nDraft Task ${stats[\"Draft Task\"]} 封 (以討論串計：${processedThreadIds.size} 串)\n\nDraft Task 資訊：＝＝＝＝＝＝＝＝＝\n${draftInfoText}\n＝＝＝＝＝＝＝＝＝＝＝＝＝＝＝＝＝`;\n\nreturn {\n  total,\n  stats,\n  uniqueDraftTaskCount: processedThreadIds.size,\n  telegramMessage: message\n};"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        512,
+        32
+      ],
+      "id": "5fbad1c2-52c3-44eb-b576-7d50d490931b",
+      "name": "Code in JavaScript"
+    },
+    {
+      "parameters": {
+        "chatId": "5964064324",
+        "text": "={{ $json.telegramMessage }}",
+        "additionalFields": {}
+      },
+      "type": "n8n-nodes-base.telegram",
+      "typeVersion": 1.2,
+      "position": [
+        720,
+        32
+      ],
+      "id": "94aecb8a-8710-4c53-b0fa-e7d8a016b1f3",
+      "name": "Send a text message",
+      "webhookId": "dfdaba4d-d00a-4e6f-9ddc-6703fd96d0c1",
+      "credentials": {
+        "telegramApi": {
+          "id": "A3xGBHBS9a1WWTYW",
+          "name": "Toby_Telegram"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "resource": "thread",
+        "operation": "addLabels",
+        "threadId": "={{ $('Get  Mail row(s)').item.json.thread_id }}",
+        "labelIds": [
+          "Label_1"
+        ]
+      },
+      "type": "n8n-nodes-base.gmail",
+      "typeVersion": 2.2,
+      "position": [
+        352,
+        176
+      ],
+      "id": "52bfd2ef-75f6-4853-bdd4-667445103167",
+      "name": "Add label to thread",
+      "webhookId": "b168d5c8-02d1-4290-a402-b3d99ab662b3",
+      "credentials": {
+        "gmailOAuth2": {
+          "id": "6XxzwJNQIwuocXy5",
+          "name": "joe.at.waypoint@gmail"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "operation": "update",
+        "dataTableId": {
+          "__rl": true,
+          "value": "={{ $('Edit Fields').item.json['User Name']+\"_LLM_Table\" }}",
+          "mode": "name"
+        },
+        "matchType": "allConditions",
+        "filters": {
+          "conditions": [
+            {
+              "keyName": "thread_id",
+              "keyValue": "={{ $json.id }}"
+            }
+          ]
+        },
+        "columns": {
+          "mappingMode": "defineBelow",
+          "value": {
+            "label_status": "1"
+          },
+          "matchingColumns": [],
+          "schema": [
+            {
+              "id": "thread_id",
+              "displayName": "thread_id",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "readOnly": false,
+              "removed": true
+            },
+            {
+              "id": "subject",
+              "displayName": "subject",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "readOnly": false,
+              "removed": true
+            },
+            {
+              "id": "mail_summary",
+              "displayName": "mail_summary",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "readOnly": false,
+              "removed": true
+            },
+            {
+              "id": "tag",
+              "displayName": "tag",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "readOnly": false,
+              "removed": true
+            },
+            {
+              "id": "label_status",
+              "displayName": "label_status",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "readOnly": false,
+              "removed": false
+            },
+            {
+              "id": "task_status",
+              "displayName": "task_status",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "readOnly": false,
+              "removed": true
+            }
+          ],
+          "attemptToConvertTypes": false,
+          "convertFieldsToString": false
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.dataTable",
+      "typeVersion": 1.1,
+      "position": [
+        560,
+        176
+      ],
+      "id": "c1ed106f-18ed-4054-9f8c-477e8b682530",
+      "name": "Update row(s)"
+    },
+    {
+      "parameters": {
+        "operation": "deleteRows",
+        "dataTableId": {
+          "__rl": true,
+          "value": "={{ $('Edit Fields').first(0).json['User Name']+\"_Mail_Table\" }}",
+          "mode": "name"
+        },
+        "matchType": "allConditions",
+        "filters": {
+          "conditions": [
+            {
+              "keyName": "llm_status",
+              "keyValue": "1"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.dataTable",
+      "typeVersion": 1.1,
+      "position": [
+        928,
+        32
+      ],
+      "id": "a0964cbf-b29c-4894-a30b-bc47983345d5",
+      "name": "Delete row(s)"
+    }
+  ],
+  "pinData": {},
+  "connections": {
+    "Get  Mail row(s)": {
+      "main": [
+        [
+          {
+            "node": "Merge",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "Get LLM Data",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Get LLM Data": {
+      "main": [
+        [
+          {
+            "node": "Remove Duplicates",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Schedule Trigger": {
+      "main": [
+        [
+          {
+            "node": "Edit Fields",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Edit Fields": {
+      "main": [
+        [
+          {
+            "node": "Get  Mail row(s)",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Remove Duplicates": {
+      "main": [
+        [
+          {
+            "node": "Merge",
+            "type": "main",
+            "index": 1
+          },
+          {
+            "node": "Add label to thread",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Merge": {
+      "main": [
+        [
+          {
+            "node": "Code in JavaScript",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Code in JavaScript": {
+      "main": [
+        [
+          {
+            "node": "Send a text message",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Add label to thread": {
+      "main": [
+        [
+          {
+            "node": "Update row(s)",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Send a text message": {
+      "main": [
+        [
+          {
+            "node": "Delete row(s)",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": false,
+  "settings": {
+    "executionOrder": "v1",
+    "availableInMCP": false
+  },
+  "versionId": "912cecc6-1175-4255-85ed-b8363486180a",
+  "meta": {
+    "templateCredsSetupCompleted": true,
+    "instanceId": "1d439c4d93c659f0613cd7f721f34cb95f1d33a263ec1a3aee355b8efbb09a1d"
+  },
+  "id": "hGyVIGziWGRfhaMGW6l0H",
+  "tags": []
+}
