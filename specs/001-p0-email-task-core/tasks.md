@@ -92,7 +92,7 @@ description: "Task list for P0 Email-to-Task Core Pipeline"
 - [X] T013 [US5] Add Google Tasks lookup/list step to check idempotency key (ThreadId/MessageId) in notes before create to handle mail loops. DoD: existing ThreadId skips or updates task; Verify: list+filter logic in workflows/waypoint-email-to-tasks.json.
 - [X] T013a [US5] Enhance deduplication to handle mail loops: If ThreadId exists, append new snippet to existing task instead of creating new one. DoD: no duplicate tasks for same thread; Verify: integration test with multi-email thread.
 - [X] T014 [US5] Add Google Tasks create node mapping to contracts/google-tasks-sync.request.json in workflows/waypoint-email-to-tasks.json. DoD: title/notes/due mapping matches contract; Verify: node fields and mapping in workflows/waypoint-email-to-tasks.json.
-- [ ] T015 [US5] Add Gmail label node to apply "WAYPOINT-Processed" after successful sync in workflows/waypoint-email-to-tasks.json. DoD: label applied only on sync success; Verify: node placement/conditions in workflows/waypoint-email-to-tasks.json.
+- [X] T015 [US5] Add Gmail label node to apply "WAYPOINT-Processed" after successful sync in workflows/waypoint-email-to-tasks.json (Implemented in Waypoint_Telegram.json). DoD: label applied only on sync success; Verify: node placement/conditions in workflows/Waypoint_Telegram.json.
 - [ ] T016 [US5] Create Error Trigger workflow in workflows/waypoint-error-trigger.json emitting non-PII events per contracts/error-event.schema.json. DoD: error workflow references schema fields and excludes PII; Verify: review workflows/waypoint-error-trigger.json.
 
 ---
@@ -104,7 +104,7 @@ description: "Task list for P0 Email-to-Task Core Pipeline"
 - [X] T020 [US6] Create Telegram notification workflow in workflows/Waypoint_Telegram.json. DoD: workflow exists and can send messages; Verify: manual trigger test.
 - [X] T021 [US6] Implement high-density Markdown V2 template for Telegram reports (Total processed, Actionable/FYI/Noise counts). DoD: template matches Hackathon standards; Verify: inspect template in workflows/Waypoint_Telegram.json.
 - [X] T022 [US6] Aggregate Draft Task details in Telegram summary (Subject, ThreadId, AI Summary, SourceLink). DoD: summary includes critical action items; Verify: integration test.
-- [ ] T023 [US6] Implement scheduled summary delivery (e.g., 08:00, 12:00, 18:00) in workflows/Waypoint_Telegram.json. DoD: scheduler configured; Verify: inspect trigger settings.
+- [X] T023 [US6] Implement scheduled summary delivery (e.g., 08:00, 12:00, 18:00) in workflows/Waypoint_Telegram.json. DoD: scheduler configured; Verify: inspect trigger settings.
 
 **Checkpoint**: User Story 5 is independently testable and delivers tasks to Google Tasks with deduplication.
 
@@ -115,7 +115,7 @@ description: "Task list for P0 Email-to-Task Core Pipeline"
 **Purpose**: Validate workflow behavior and stateless privacy compliance.
 
 - [ ] T017 Create workflow execution test checklist in specs/001-p0-email-task-core/testing.md covering US1–US5 acceptance scenarios. DoD: checklist maps to each story’s independent test; Verify: review specs/001-p0-email-task-core/testing.md.
-- [ ] T018 [P] Create stateless privacy audit checklist in specs/001-p0-email-task-core/compliance.md (no execution data saved, no PII in logs). DoD: audit steps and pass criteria documented; Verify: review specs/001-p0-email-task-core/compliance.md.
+- [X] T018 [P] Create stateless privacy audit checklist in specs/001-p0-email-task-core/compliance.md (no execution data saved, no PII in logs). DoD: audit steps and pass criteria documented; Verify: review specs/001-p0-email-task-core/compliance.md.
 - [ ] T019 Update specs/001-p0-email-task-core/quickstart.md to reference testing and compliance checklists. DoD: quickstart links to testing/compliance docs; Verify: review specs/001-p0-email-task-core/quickstart.md.
 
 ---
