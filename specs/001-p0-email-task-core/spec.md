@@ -18,7 +18,7 @@ This specification defines the P0 (Critical) features required to build the core
 
 The **core pipeline sequence** is: Email Ingestion (Buffered) → Thread-based AI Analysis (Classifier) → AI-driven Task Synchronization (Sync Expert) → Telegram Notification Summary.
 
-All features adhere to the Constitution's **Stateless Processing** principle—no email content or attachments persist beyond processing.
+All features adhere to the Constitution's **Stateless Processing** principle—no email content persists beyond processing.
 
 ## Target Environment: n8n
 
@@ -64,7 +64,7 @@ This specification defines the Email-to-Task pipeline as an n8n workflow. All co
 - Use **"Continue on Fail"** setting on LLM nodes for retryable errors (timeouts, rate limits)
 - Use **Error Trigger workflow** to catch and log permanent failures (auth errors, malformed responses)
 - Inline Code node after LLM nodes validates response and returns partial results with error status
-- Cap LLM input size and attachment bytes; skip oversized items with partial status and reason
+- Cap LLM input size; skip oversized items with partial status and reason
 
 ### Task Card Delivery
 
@@ -88,7 +88,7 @@ This specification defines the Email-to-Task pipeline as an n8n workflow. All co
 
 - Q: How should stateless processing be enforced when runs fail? → A: Disable execution data saving for all runs and log only non-PII metadata via Error Trigger workflow
 - Q: How should duplicates be prevented if Gmail labeling fails? → A: Use Gmail message ID as an idempotency key in Google Tasks notes and skip creation if the key already exists; retry labeling separately
-- Q: How should oversized emails or large attachments be handled for n8n AI Agent limits? → A: Cap input size and attachment bytes; skip oversized items with partial status and reason
+- Q: How should oversized emails be handled for n8n AI Agent limits? → A: Cap input size; skip oversized items with partial status and reason
 - Q: How should date conversion be handled before Google Tasks sync? → A: Add an explicit transformation step to convert ISO 8601 to RFC 3339; if conversion fails, omit due date and record statusReason
 
 ### Session 2026-01-19
@@ -206,8 +206,7 @@ As a user, I want every approved actionable task to be automatically synced to m
 - What happens when email is in a non-English language? → LLM attempts classification; if confidence is low, task is flagged for manual review.
 - What happens when an email contains multiple action items? → Extraction returns an array of action items, each as a separate waypoint.
 - What happens when OAuth token is revoked by user? → System detects 401 error, marks user as "deauthorized", and prompts re-authorization on next access.
-- What happens when attachment parsing fails? → Skip the attachment, return partial task list with clear indication of skipped files (Constitution Principle VII).
-- What happens when email body or attachments exceed LLM limits? → Skip oversized content and return partial status with explicit size-limit reason.
+- What happens when email body exceeds LLM limits? → Skip oversized content and return partial status with explicit size-limit reason.
 - What happens when Google Tasks API rate limit is exceeded? → Set Task Card status to "partial" with statusReason; workflow can retry per n8n error handling.
 - What happens when dueDate format is invalid for Google Tasks? → Convert to RFC 3339 format; if conversion fails, sync without due date and note in statusReason.
 - What happens when Google Tasks sync succeeds but Gmail labeling fails? → Log warning; retry Gmail labeling and prevent duplicates by checking a Gmail message ID idempotency key stored in Google Tasks notes.

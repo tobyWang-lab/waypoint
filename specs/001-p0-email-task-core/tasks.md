@@ -43,8 +43,8 @@ description: "Task list for P0 Email-to-Task Core Pipeline"
 ### Implementation for User Story 1
 
 - [X] T004 [US1] Configure Gmail trigger/polling node to fetch unread inbox emails and exclude label "WAYPOINT-Processed" in workflows/waypoint-email-to-tasks.json. DoD: Gmail node filters unread inbox and label exclusion; Verify: node query/filters in workflows/waypoint-email-to-tasks.json.
-- [X] T005 [US1] Add Gmail message detail retrieval (body + attachment metadata) in workflows/waypoint-email-to-tasks.json. DoD: message payload includes body and attachment metadata; Verify: node output mapping in workflows/waypoint-email-to-tasks.json.
-- [X] T006 [US1] Add Code node to cap email body length and attachment bytes, setting statusReason on oversize in workflows/waypoint-email-to-tasks.json. DoD: size caps applied and oversize flagged as partial; Verify: code logic present in workflows/waypoint-email-to-tasks.json.
+- [X] T005 [US1] Add Gmail message detail retrieval in workflows/waypoint-email-to-tasks.json. DoD: message payload includes body; Verify: node output mapping in workflows/waypoint-email-to-tasks.json.
+- [X] T006 [US1] Add Code node to cap email body length, setting statusReason on oversize in workflows/waypoint-email-to-tasks.json. DoD: size caps applied and oversize flagged as partial; Verify: code logic present in workflows/waypoint-email-to-tasks.json.
 
 **Checkpoint**: User Story 1 is independently testable and enforces stateless ingestion.
 
