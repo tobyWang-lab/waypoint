@@ -7,59 +7,49 @@
 
 ## Summary
 
-Deliver a headless n8n workflow that ingests Gmail, filters noise, extracts intent/waypoints with an LLM, syncs actionable tasks directly to Google Tasks, and labels processed emails. The workflow enforces stateless processing (no execution data saved), uses idempotency keys to prevent duplicates, caps LLM input size, and converts ISO 8601 dates to RFC 3339 before sync.
+Deliver a modular n8n architecture that ingests Gmail, buffers data in internal tables, and uses specialized AI agents to analyze email threads and synchronize tasks. The pipeline consists of four core workflows: **Retriever** (Ingestion), **Classifier** (Thread-level Intelligence), **Task Sync** (AI-driven Deduplication), and **Telegram** (Intelligence Delivery). The system uses a buffered architecture (`Mail_Table`, `LLM_Table`, `Task_Table`) to enable robust thread merging and state management while maintaining privacy-conscious processing.
 
 ## Technical Context
 
-<!--
-  ACTION REQUIRED: Replace the content in this section with the technical details
-  for the project. The structure here is presented in advisory capacity to guide
-  the iteration process.
--->
-
-**Language/Version**: n8n workflow JSON (no app runtime language)  
-**Primary Dependencies**: n8n (self-hosted Docker), Gmail API, Google Tasks API, LLM provider API  
-**Storage**: N/A (stateless; no persistent storage of raw email data)  
-**Testing**: n8n workflow execution tests + schema validation of Task Cards  
+**Language/Version**: n8n workflow JSON (modular multi-workflow architecture)  
+**Primary Dependencies**: n8n (self-hosted Docker), Gmail API, Google Tasks API, Telegram Bot API, OpenAI GPT-5-nano (LLM)  
+**Storage**: n8n Internal Data Tables (`Mail_Table`, `LLM_Table`, `Task_Table`) used as a temporary Operational Data Store (ODS).  
+**Testing**: Modular workflow execution tests + AI Agent logic validation.  
 **Target Platform**: Self-hosted n8n on Linux Docker  
-**Project Type**: single (workflow configuration + documentation)  
-**Performance Goals**: Process 100 emails and generate Task Cards in <5 minutes (SC-002)  
-**Constraints**: Stateless processing, no execution data saved, LLM token/timeout limits, RFC 3339 conversion required  
-**Scale/Scope**: P0 pipeline for single workflow run; batch size ~100 emails
+**Project Type**: modular (separate workflows for ingestion, analysis, sync, and notification)  
+**Performance Goals**: Process 100 emails and generate/sync tasks in <5 minutes (SC-002)  
+**Constraints**: Thread-level context merging, AI-driven idempotency, Asia/Taipei timezone handling.  
+**Scale/Scope**: P0 core intelligence pipeline supporting multi-email thread deduplication.
 
 ## Constitution Check
 
-*GATE: Must pass before Phase 0 research. Re-check after Phase 1 design.*
-
-- **Principle I (Code Quality)**: PASS — workflow nodes separated by responsibility (ingest, filter, extract, sync, label).
-- **Principle II (Testing Standards)**: PASS — plan includes workflow execution tests and schema validation; accuracy tests required in implementation.
-- **Principle III (User Experience)**: PASS — Task Card schema and status fields maintained per spec.
-- **Principle IV (MVP & Anti-Over-Design)**: PASS — scope limited to email-to-task pipeline with no dashboards.
-- **Principle V (Stateless Processing)**: PASS — execution data saving disabled; no raw email persistence.
-- **Principle VI (Integration Flexibility)**: PASS — LLM provider configurable via standard APIs.
-- **Principle VII (Error Handling)**: PASS — partial statuses, error triggers, and size caps defined.
-
-**Post-Design Check (Phase 1)**: PASS — artifacts align with principles and do not introduce new storage or UI scope.
+- **Principle I (Code Quality)**: PASS — Workflows are modularized by responsibility (Ingest, Classify, Sync, Notify).
+- **Principle II (Testing Standards)**: PASS — Independent testing possible for each module via the ODS tables.
+- **Principle III (User Experience)**: PASS — Proactive Telegram summaries provide high-density intelligence delivery.
+- **Principle IV (MVP & Anti-Over-Design)**: PASS — No external frontend; leverage native Google Tasks and Telegram UI.
+- **Principle V (Stateless Processing)**: PARTIAL — Uses internal tables for buffering thread context; execution data pruning remains active.
+- **Principle VI (Integration Flexibility)**: PASS — Modular design allows replacing individual AI Agents or providers.
+- **Principle VII (Error Handling)**: PASS — Status tracking in DB tables allows for robust retry and auditing.
 
 ## Project Structure
 
-### Documentation (this feature)
+### Documentation
 
 ```text
-specs/[###-feature]/
-├── plan.md              # This file (/speckit.plan command output)
-├── research.md          # Phase 0 output (/speckit.plan command)
-├── data-model.md        # Phase 1 output (/speckit.plan command)
-├── quickstart.md        # Phase 1 output (/speckit.plan command)
-├── contracts/           # Phase 1 output (/speckit.plan command)
-└── tasks.md             # Phase 2 output (/speckit.tasks command - NOT created by /speckit.plan)
+specs/001-p0-email-task-core/
+├── plan.md              # This file
+├── spec.md              # Feature specification
+└── tasks.md             # Task list and progress tracking
 ```
 
-### Source Code (repository root)
+### Source Code
 
 ```text
 workflows/
-└── waypoint-email-to-tasks.json
+├── Waypoint-mail-retriever.json  # Ingestion module
+├── Waypoint-classifier.json      # Intelligence module (Thread analysis)
+├── Waypoint-task.json            # Synchronization module (Sync Expert)
+└── Waypoint_Telegram.json        # Notification module
 ```
 
 **Structure Decision**: Documentation-driven plan; workflow JSON will be stored under workflows/ when implemented.
