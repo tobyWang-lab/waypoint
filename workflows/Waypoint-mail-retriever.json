@@ -15,8 +15,8 @@
       "type": "n8n-nodes-base.scheduleTrigger",
       "typeVersion": 1.3,
       "position": [
-        -400,
-        0
+        -448,
+        560
       ],
       "id": "c3d583d3-52cd-4789-9a90-434dba389add",
       "name": "Schedule Trigger"
@@ -26,14 +26,16 @@
         "operation": "getAll",
         "returnAll": true,
         "filters": {
-          "q": "=after:{{ $json.slots[0].after }} \nbefore:{{ $json.slots[0].before }}\n"
+          "labelIds": [
+            "INBOX"
+          ]
         }
       },
       "type": "n8n-nodes-base.gmail",
       "typeVersion": 2.2,
       "position": [
         896,
-        -16
+        560
       ],
       "id": "039e085b-09ab-45e5-8436-582676f38124",
       "name": "Get many messages",
@@ -50,7 +52,7 @@
         "operation": "rowNotExists",
         "dataTableId": {
           "__rl": true,
-          "value": "={{ $('Edit Fields').item.json['User Name']+\"_Mail_Table\" }}",
+          "value": "={{ $('Set Table Prefix').item.json['User Name']+\"_Mail_Table\" }}",
           "mode": "name"
         },
         "matchType": "allConditions",
@@ -66,112 +68,11 @@
       "type": "n8n-nodes-base.dataTable",
       "typeVersion": 1.1,
       "position": [
-        1072,
-        -16
+        1536,
+        560
       ],
       "id": "3e59cfa2-f21a-4e14-b782-537cbf7e92c7",
       "name": "If row does not exist"
-    },
-    {
-      "parameters": {
-        "assignments": {
-          "assignments": [
-            {
-              "id": "b99ad580-4022-496d-9068-c32907e332a1",
-              "name": "User Name",
-              "value": "Waypoint",
-              "type": "string"
-            }
-          ]
-        },
-        "options": {}
-      },
-      "type": "n8n-nodes-base.set",
-      "typeVersion": 3.4,
-      "position": [
-        -208,
-        0
-      ],
-      "id": "c49ce4ba-f042-4966-8d91-4001b613db37",
-      "name": "Edit Fields"
-    },
-    {
-      "parameters": {
-        "conditions": {
-          "options": {
-            "caseSensitive": true,
-            "leftValue": "",
-            "typeValidation": "strict",
-            "version": 3
-          },
-          "conditions": [
-            {
-              "id": "2c53610b-7d93-430f-8e8a-3204287089f2",
-              "leftValue": "={{ $json.name }}",
-              "rightValue": "",
-              "operator": {
-                "type": "string",
-                "operation": "notEmpty",
-                "singleValue": true
-              }
-            }
-          ],
-          "combinator": "and"
-        },
-        "options": {}
-      },
-      "type": "n8n-nodes-base.if",
-      "typeVersion": 2.3,
-      "position": [
-        128,
-        0
-      ],
-      "id": "f8d24caf-cfbf-4ad2-a0d3-22860e5977c1",
-      "name": "If"
-    },
-    {
-      "parameters": {
-        "resource": "table",
-        "operation": "create",
-        "tableName": "={{ $('Edit Fields').item.json['User Name']+\"_Mail_Table\" }}",
-        "columns": {
-          "column": [
-            {
-              "name": "mail_id"
-            },
-            {
-              "name": "thread_id"
-            },
-            {
-              "name": "receive_time"
-            },
-            {
-              "name": "from"
-            },
-            {
-              "name": "to"
-            },
-            {
-              "name": "subject"
-            },
-            {
-              "name": "snippet"
-            },
-            {
-              "name": "llm_status"
-            }
-          ]
-        },
-        "options": {}
-      },
-      "type": "n8n-nodes-base.dataTable",
-      "typeVersion": 1.1,
-      "position": [
-        320,
-        112
-      ],
-      "id": "e6a9d147-3afb-45cd-836e-d1ef68e37508",
-      "name": "Create a mail table"
     },
     {
       "parameters": {
@@ -185,8 +86,8 @@
       "type": "n8n-nodes-base.dataTable",
       "typeVersion": 1.1,
       "position": [
-        -48,
-        0
+        0,
+        560
       ],
       "id": "71c8aa95-2b1d-499f-af6c-e014b7afec91",
       "name": "check mail table if exist",
@@ -196,7 +97,7 @@
       "parameters": {
         "dataTableId": {
           "__rl": true,
-          "value": "={{ $('Edit Fields').item.json['User Name']+\"_Mail_Table\" }}",
+          "value": "={{ $('Set Table Prefix').item.json['User Name']+\"_Mail_Table\" }}",
           "mode": "name"
         },
         "columns": {
@@ -207,7 +108,7 @@
             "subject": "={{ $('Get many messages').item.json.Subject }}",
             "to": "={{ $('Get many messages').item.json.To }}",
             "from": "={{ $('Get many messages').item.json.From }}",
-            "receive_time": "={{ new Date(parseInt($json.internalDate) + 8 * 60 * 60 * 1000).toISOString() }}",
+            "receive_time": "={{ new Date(parseInt($('Get many messages').item.json.internalDate) + 8 * 60 * 60 * 1000).toISOString() }}",
             "snippet": "={{ $('Get many messages').item.json.snippet }}",
             "llm_status": "0"
           },
@@ -302,48 +203,1188 @@
       "type": "n8n-nodes-base.dataTable",
       "typeVersion": 1.1,
       "position": [
-        1280,
-        -16
+        1760,
+        560
       ],
       "id": "460b0656-5b01-4960-9981-1fb1f1fc8d73",
       "name": "Insert mail data"
     },
     {
       "parameters": {
-        "jsCode": "// 目前時間（台灣）\nconst now = DateTime.now().setZone('Asia/Taipei');\n\n// 用「今天」當基準\nconst base = now.startOf('day');\n\nconst slots = [\n  { label: '08-12', startHour: 8, endHour: 12 },\n  { label: '12-18', startHour: 12, endHour: 18 },\n  { label: '18-24', startHour: 18, endHour: 24 },\n];\n\n// 找出「現在時間落在哪個 slot」\nconst currentSlot = slots.find(s => {\n  const start = base.set({ hour: s.startHour });\n  const end = base.set({ hour: s.endHour });\n  return now >= start && now < end;\n});\n\n// ❌ 如果現在不是 08–24（例如凌晨），直接不輸出\nif (!currentSlot) {\n  return [];\n}\n\n// 算該 slot 的 after / before\nconst start = base.set({\n  hour: currentSlot.startHour,\n  minute: 0,\n  second: 0,\n  millisecond: 0,\n});\n\nconst end = base.set({\n  hour: currentSlot.endHour,\n  minute: 0,\n  second: 0,\n  millisecond: 0,\n});\n\n// ✅ 只回傳「一個 item」\nreturn [\n  {\n    json: {\n      label: currentSlot.label,\n      after: Math.floor(start.toSeconds()),   // Gmail 要秒\n      before: Math.floor(end.toSeconds()),\n      date: base.toISODate(),\n    }\n  }\n];\n"
+        "schemaType": "manual",
+        "inputSchema": "{\n  \"type\": \"object\",\n  \"properties\": {\n    \"thread_id\": {\n      \"type\": \"string\"\n    },\n    \"subject\": {\n      \"type\": \"string\"\n    },\n    \"mail_summary\": {\n      \"type\": \"string\"\n    },\n    \"tag\": {\n      \"type\": \"string\",\n      \"enum\": [\"Noise\", \"Draft Task\", \"FYI\", \"Forward\"]\n    },\n    \"tasks\": {\n      \"type\": \"array\",\n      \"items\": {\n        \"type\": \"object\",\n        \"properties\": {\n          \"task_subject\": {\n            \"type\": \"string\"\n          },\n          \"task_content\": {\n            \"type\": \"string\"\n          },\n          \"due_date\": {\n            \"type\": \"string\",\n            \"description\": \"Must be RFC3339 string or the word null\"\n          }\n        },\n        \"required\": [\"task_subject\", \"task_content\", \"due_date\"]\n      }\n    }\n  },\n  \"required\": [\"thread_id\", \"subject\", \"mail_summary\", \"tag\", \"tasks\"]\n}"
       },
-      "type": "n8n-nodes-base.code",
-      "typeVersion": 2,
+      "type": "@n8n/n8n-nodes-langchain.outputParserStructured",
+      "typeVersion": 1.3,
       "position": [
-        512,
-        -16
+        1840,
+        1584
       ],
-      "id": "f635226a-a359-476a-829c-01cbef70fad7",
-      "name": "Code in JavaScript"
+      "id": "d1cc6b94-9454-4a41-948e-930cb0e4d3e2",
+      "name": "Structured Output Parser"
     },
     {
       "parameters": {
-        "mode": "raw",
-        "jsonOutput": "={\n  \"slots\": [\n    {\n      \"label\": \"{{ $json.label }}\",\n      \"after\": {{ $json.after }},\n      \"before\": {{ $json.before }}\n    },\n  ]\n}\n",
+        "operation": "get",
+        "dataTableId": {
+          "__rl": true,
+          "value": "={{ $('Set Table Prefix').item.json['User Name']+\"_Mail_Table\" }}",
+          "mode": "name"
+        },
+        "matchType": "allConditions",
+        "filters": {
+          "conditions": [
+            {
+              "keyName": "llm_status",
+              "keyValue": "0"
+            }
+          ]
+        },
+        "returnAll": true
+      },
+      "type": "n8n-nodes-base.dataTable",
+      "typeVersion": 1.1,
+      "position": [
+        -48,
+        1360
+      ],
+      "id": "30901f74-ff00-4042-81c5-f9b3c93ce7af",
+      "name": "Get Mail Data",
+      "executeOnce": false
+    },
+    {
+      "parameters": {
+        "operation": "get",
+        "dataTableId": {
+          "__rl": true,
+          "value": "={{ $('Set Table Prefix').item.json['User Name']+\"_LLM_Table\" }}",
+          "mode": "name"
+        },
+        "matchType": "allConditions",
+        "filters": {
+          "conditions": [
+            {
+              "keyName": "thread_id",
+              "keyValue": "={{ $json.thread_id }}"
+            }
+          ]
+        },
+        "returnAll": true
+      },
+      "type": "n8n-nodes-base.dataTable",
+      "typeVersion": 1.1,
+      "position": [
+        176,
+        1424
+      ],
+      "id": "9cbce196-e6a3-4de1-b13a-302378410f19",
+      "name": "Get LLM Data",
+      "executeOnce": false,
+      "alwaysOutputData": true
+    },
+    {
+      "parameters": {
+        "mode": "combineBySql",
+        "query": "SELECT thread_id,subject,updatedAt AS time_val, mail_summary AS content_val FROM input2\nWHERE thread_id IS NOT NULL\nUNION ALL\nSELECT thread_id,subject,receive_time AS time_val, snippet AS content_val FROM input1\nWHERE thread_id IS NOT NULL\nORDER BY time_val ASC;",
+        "options": {
+          "emptyQueryResult": "empty"
+        }
+      },
+      "type": "n8n-nodes-base.merge",
+      "typeVersion": 3.2,
+      "position": [
+        624,
+        1360
+      ],
+      "id": "806db739-dc56-453c-a70f-e3806ae8ab9f",
+      "name": "Merge"
+    },
+    {
+      "parameters": {
+        "options": {}
+      },
+      "type": "n8n-nodes-base.removeDuplicates",
+      "typeVersion": 2,
+      "position": [
+        400,
+        1424
+      ],
+      "id": "5eddfc80-6243-4f17-90cd-82f848ce93df",
+      "name": "Remove Duplicates",
+      "alwaysOutputData": true
+    },
+    {
+      "parameters": {
+        "operation": "upsert",
+        "dataTableId": {
+          "__rl": true,
+          "value": "={{ $('Set Table Prefix').first(0).json[\"User Name\"] + \"_LLM_Table\" }}",
+          "mode": "name"
+        },
+        "matchType": "allConditions",
+        "filters": {
+          "conditions": [
+            {
+              "keyName": "thread_id",
+              "keyValue": "={{ $json.output.thread_id }}"
+            }
+          ]
+        },
+        "columns": {
+          "mappingMode": "defineBelow",
+          "value": {
+            "thread_id": "={{ $json.output.thread_id }}",
+            "subject": "={{ $json.output.subject }}",
+            "mail_summary": "={{ $json.output.mail_summary }}",
+            "tag": "={{ $json.output.tag }}",
+            "label_status": "0",
+            "task_status": "0"
+          },
+          "matchingColumns": [],
+          "schema": [
+            {
+              "id": "thread_id",
+              "displayName": "thread_id",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "readOnly": false,
+              "removed": false
+            },
+            {
+              "id": "subject",
+              "displayName": "subject",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "readOnly": false,
+              "removed": false
+            },
+            {
+              "id": "mail_summary",
+              "displayName": "mail_summary",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "readOnly": false,
+              "removed": false
+            },
+            {
+              "id": "tag",
+              "displayName": "tag",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "readOnly": false,
+              "removed": false
+            },
+            {
+              "id": "label_status",
+              "displayName": "label_status",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "readOnly": false,
+              "removed": false
+            },
+            {
+              "id": "task_status",
+              "displayName": "task_status",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "readOnly": false,
+              "removed": false
+            }
+          ],
+          "attemptToConvertTypes": false,
+          "convertFieldsToString": false
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.dataTable",
+      "typeVersion": 1.1,
+      "position": [
+        2368,
+        1376
+      ],
+      "id": "95beca60-12ac-4e5b-abcc-669031622046",
+      "name": "Upsert LLM Data"
+    },
+    {
+      "parameters": {
+        "fieldToSplitOut": "output.tasks",
+        "include": "allOtherFields",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.splitOut",
+      "typeVersion": 1,
+      "position": [
+        2048,
+        1568
+      ],
+      "id": "f01ff16a-bc65-4a91-9b7a-f92280c71bd5",
+      "name": "Split Out"
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "9bf98a9f-d5d7-40b6-9284-929a7caf5b40",
+              "name": "task_id",
+              "value": "null",
+              "type": "string"
+            },
+            {
+              "id": "bfaefd0e-fa0a-46ad-96ec-8d6cde824192",
+              "name": "thread_id",
+              "value": "={{ $json.output.thread_id }}",
+              "type": "string"
+            },
+            {
+              "id": "4b9ad218-601a-4983-9b45-c8b6d1b3b13c",
+              "name": "task_subject",
+              "value": "={{ $json['output.tasks'].task_subject }}",
+              "type": "string"
+            },
+            {
+              "id": "bf6c1ee6-4be9-42f6-b9f4-a5d5b187023d",
+              "name": "task_content",
+              "value": "={{ $json['output.tasks'].task_content }}",
+              "type": "string"
+            },
+            {
+              "id": "f7e74099-2c69-4463-9de7-399f4f8d33c5",
+              "name": "due_date",
+              "value": "={{ $json['output.tasks'].due_date }}",
+              "type": "string"
+            }
+          ]
+        },
         "options": {}
       },
       "type": "n8n-nodes-base.set",
       "typeVersion": 3.4,
       "position": [
-        704,
-        -16
+        2480,
+        1568
       ],
-      "id": "067927cc-cbc8-4524-8358-ba48cd14d2a2",
-      "name": "Edit Fields2"
+      "id": "92db6fa1-ff1c-48bb-876d-5d2592d041f3",
+      "name": "Set Task Table Value"
+    },
+    {
+      "parameters": {
+        "operation": "update",
+        "dataTableId": {
+          "__rl": true,
+          "value": "={{ $('Set Table Prefix').first(0).json[\"User Name\"] + \"_Mail_Table\" }}",
+          "mode": "name"
+        },
+        "matchType": "allConditions",
+        "filters": {
+          "conditions": [
+            {
+              "keyName": "thread_id",
+              "keyValue": "={{ $json.output.thread_id }}"
+            }
+          ]
+        },
+        "columns": {
+          "mappingMode": "defineBelow",
+          "value": {
+            "llm_status": "1"
+          },
+          "matchingColumns": [],
+          "schema": [
+            {
+              "id": "mail_id",
+              "displayName": "mail_id",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "readOnly": false,
+              "removed": true
+            },
+            {
+              "id": "thread_id",
+              "displayName": "thread_id",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "readOnly": false,
+              "removed": true
+            },
+            {
+              "id": "receive_time",
+              "displayName": "receive_time",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "readOnly": false,
+              "removed": true
+            },
+            {
+              "id": "from",
+              "displayName": "from",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "readOnly": false,
+              "removed": true
+            },
+            {
+              "id": "to",
+              "displayName": "to",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "readOnly": false,
+              "removed": true
+            },
+            {
+              "id": "subject",
+              "displayName": "subject",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "readOnly": false,
+              "removed": true
+            },
+            {
+              "id": "snippet",
+              "displayName": "snippet",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "readOnly": false,
+              "removed": true
+            },
+            {
+              "id": "llm_status",
+              "displayName": "llm_status",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "readOnly": false,
+              "removed": false
+            }
+          ],
+          "attemptToConvertTypes": false,
+          "convertFieldsToString": false
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.dataTable",
+      "typeVersion": 1.1,
+      "position": [
+        2368,
+        1200
+      ],
+      "id": "f8e6fd9f-6e57-46c0-b1de-adad5b67a37b",
+      "name": "Update Mail Table"
+    },
+    {
+      "parameters": {
+        "dataTableId": {
+          "__rl": true,
+          "value": "={{ $('Set Table Prefix').first().json[\"User Name\"] + \"_Task_Table\" }}",
+          "mode": "name"
+        },
+        "columns": {
+          "mappingMode": "defineBelow",
+          "value": {
+            "task_id": "={{ $json.task_id }}",
+            "thread_id": "={{ $json.thread_id }}",
+            "task_content": "={{ $json.task_content }}",
+            "task_subject": "={{ $json.task_subject }}",
+            "due_date": "={{ $json.due_date }}",
+            "create_task_status": "0",
+            "uuid": "={{ Math.random().toString(36).slice(2) + Date.now() }}"
+          },
+          "matchingColumns": [],
+          "schema": [
+            {
+              "id": "uuid",
+              "displayName": "uuid",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "readOnly": false,
+              "removed": false
+            },
+            {
+              "id": "task_id",
+              "displayName": "task_id",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "readOnly": false,
+              "removed": false
+            },
+            {
+              "id": "thread_id",
+              "displayName": "thread_id",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "readOnly": false,
+              "removed": false
+            },
+            {
+              "id": "task_subject",
+              "displayName": "task_subject",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "readOnly": false,
+              "removed": false
+            },
+            {
+              "id": "task_content",
+              "displayName": "task_content",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "readOnly": false,
+              "removed": false
+            },
+            {
+              "id": "due_date",
+              "displayName": "due_date",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "readOnly": false,
+              "removed": false
+            },
+            {
+              "id": "create_task_status",
+              "displayName": "create_task_status",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "readOnly": false,
+              "removed": false
+            }
+          ],
+          "attemptToConvertTypes": false,
+          "convertFieldsToString": false
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.dataTable",
+      "typeVersion": 1.1,
+      "position": [
+        2704,
+        1568
+      ],
+      "id": "a11b43b2-1af7-47f9-8cd6-dd609289efe3",
+      "name": "Insert row"
+    },
+    {
+      "parameters": {
+        "jsCode": "const threadMap = {};\n// 處理 SQL 合併後的每一行\nfor (const item of $input.all()) {\n  const d = item.json;\n  if (!threadMap[d.thread_id]) {\n    threadMap[d.thread_id] = { thread_id: d.thread_id, Content: [] };\n  }\n  threadMap[d.thread_id].Content.push({\n    subject: d.subject,\n    receive_time: d.time_val,\n    snippet: d.content_val\n  });\n}\nreturn Object.values(threadMap).map(v => ({ json: v }));"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        848,
+        1360
+      ],
+      "id": "d7f96b06-74f6-45db-9ae1-a7aa806f4020",
+      "name": "merge Table",
+      "executeOnce": false
+    },
+    {
+      "parameters": {
+        "aggregate": "aggregateAllItemData",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.aggregate",
+      "typeVersion": 1,
+      "position": [
+        1984,
+        560
+      ],
+      "id": "942f2581-5974-4096-8a7c-a69b9760b3d9",
+      "name": "Aggregate"
+    },
+    {
+      "parameters": {
+        "numberInputs": 4
+      },
+      "type": "n8n-nodes-base.merge",
+      "typeVersion": 3.2,
+      "position": [
+        2928,
+        1360
+      ],
+      "id": "20edb60a-73e0-4160-b64c-348b89e45160",
+      "name": "Merge1"
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "b99ad580-4022-496d-9068-c32907e332a1",
+              "name": "User Name",
+              "value": "Waypoint",
+              "type": "string"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        -224,
+        560
+      ],
+      "id": "c49ce4ba-f042-4966-8d91-4001b613db37",
+      "name": "Set Table Prefix"
+    },
+    {
+      "parameters": {
+        "content": "## Scheduled Mail Checker\n* Do remember to modify User name in the SECOND node to have your own table if using the same N8N instance with multiple users.",
+        "height": 368,
+        "width": 2704
+      },
+      "type": "n8n-nodes-base.stickyNote",
+      "position": [
+        -544,
+        432
+      ],
+      "typeVersion": 1,
+      "id": "f58318fc-6241-4ce1-af5d-a0dbc0ee1537",
+      "name": "Sticky Note"
+    },
+    {
+      "parameters": {
+        "content": "## Let the AI Agent Do Its Job",
+        "height": 560,
+        "width": 3536
+      },
+      "type": "n8n-nodes-base.stickyNote",
+      "position": [
+        -480,
+        1152
+      ],
+      "typeVersion": 1,
+      "id": "ebeaff22-ae2d-4dc7-8119-5596b6220253",
+      "name": "Sticky Note1"
+    },
+    {
+      "parameters": {
+        "modelName": "models/gemini-3-flash-preview",
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.lmChatGoogleGemini",
+      "typeVersion": 1,
+      "position": [
+        1696,
+        1584
+      ],
+      "id": "7e7e20a1-d72a-44e8-823b-52d9a833ca71",
+      "name": "Google Gemini Chat Model",
+      "credentials": {
+        "googlePalmApi": {
+          "id": "nezlZv3N3A3MFZfW",
+          "name": "Joe_Gemini (Use OpenAI First)"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "aggregate": "aggregateAllItemData",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.aggregate",
+      "typeVersion": 1,
+      "position": [
+        3136,
+        1392
+      ],
+      "id": "f62a134e-c16f-4960-a647-975885014ed9",
+      "name": "Aggregate1"
+    },
+    {
+      "parameters": {
+        "operation": "removeLabels",
+        "messageId": "={{ $json.id }}",
+        "labelIds": [
+          "INBOX"
+        ]
+      },
+      "type": "n8n-nodes-base.gmail",
+      "typeVersion": 2.2,
+      "position": [
+        1104,
+        560
+      ],
+      "id": "ce3294b1-e18c-427e-9e76-9bff2ee9da1c",
+      "name": "Remove from Inbox",
+      "webhookId": "2e2eec77-da2e-4c42-94f7-73647b045f19",
+      "credentials": {
+        "gmailOAuth2": {
+          "id": "6XxzwJNQIwuocXy5",
+          "name": "joe.at.waypoint@gmail"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "operation": "get",
+        "dataTableId": {
+          "__rl": true,
+          "value": "jO1VdOXpecfAS7G4",
+          "mode": "list",
+          "cachedResultName": "Waypoint_Task_Table",
+          "cachedResultUrl": "/projects/FrVfm13rbs02W3ED/datatables/jO1VdOXpecfAS7G4"
+        },
+        "filters": {
+          "conditions": [
+            {
+              "keyName": "thread_id",
+              "keyValue": "={{ $json.thread_id }}"
+            }
+          ]
+        },
+        "returnAll": true
+      },
+      "type": "n8n-nodes-base.dataTable",
+      "typeVersion": 1.1,
+      "position": [
+        1328,
+        1472
+      ],
+      "id": "9a415e91-18e1-4550-bd2b-45161af4fda3",
+      "name": "getTasks",
+      "alwaysOutputData": true
+    },
+    {
+      "parameters": {
+        "promptType": "define",
+        "text": "=You are an email thread analysis assistant. Your goal is to analyze a series of emails within the SAME thread and output a single, consolidated JSON including both thread-level metadata and specific action items.\n\n### CRITICAL INSTRUCTIONS\n1. **Case Sensitivity**: You MUST use lowercase snake_case for all keys: \"thread_id\", \"subject\", \"tag\", \"mail_summary\", \"tasks\", \"task_subject\", \"task_content\", \"due_date\".\n2. **threadId Extraction**: Use the exact value from \"Target_ThreadId\" below.\n3. **subject Selection**: Use the Subject from the OLDEST email in the thread.\n4. **JSON Safety**: Do not use double quotes inside strings unless escaped (\\\"). Ensure the entire output is a single valid JSON object.\n\n### Consolidation Logic\n1. **thread_id**: Set to the value of \"Target_ThreadId\".\n2. **subject**:Use the subject line from the earliest message in the sequence.At the end of the subject, you MUST append the analyzed severity level of the thread in the format: \"(Severity:level)\".Example: \"provide yaml file (Severity:high)\"The \"level\" must be one of: high, medium, low.\n3. **tag**: Determine the tag based on the LATEST state of the conversation. If a task was requested in an early email but completed/cancelled in a later one, the tag should be FYI or Noise.\n4. **mail_summary**: Summarize the entire progression of the conversation in 1-2 sentences. Prioritize information from the latest Receive_Time.Avoid special characters and ensure the text is JSON-safe.If the body is empty or contains no meaningful text, output \"No content available\".\nIf there are Existing Tasks, briefly mention if they are being followed up on or if the conversation has shifted to a new topic.\n\n### Action Item Extraction (Task Level)\n0. **Input Integration**: First, review the Existing Tasks. These are tasks previously identified. You must combine these with any new insights from the Email Contents.\n1. **tasks Array**: Identify ALL current actionable items in the thread. \n2. **task_subject**: Create a short, action-oriented title for each specific task.\n3. **task_content**: Provide specific details for each action.\n4. **due_date (Inside Tasks)**: \n   - Extract the deadline for this SPECIFIC task in RFC3339 format.\n   - **IMPORTANT**: If no deadline exists, you MUST output the literal string \"null\" (with double quotes in the JSON, e.g., \"due_date\": \"null\"). \n   - **DO NOT** use the JSON null value. It MUST be a string.\n5. Reconciliation Logic:\n   - **Completed Tasks**: If an Existing Task is explicitly     - mentioned as \"done\", \"completed\", or \"resolved\" in the new Email Contents, EXCLUDE it from the output array (effectively closing it).\n   - **New Tasks**: If the email contains a new request not present in Existing Tasks, ADD it.\n   - **Updated Tasks**: If an Existing Task is discussed again with new details (e.g., new deadline, clarification), UPDATE the task_content and due_date accordingly and keep it in the output.\n   - **Unchanged Tasks**: If an Existing Task is NOT mentioned in the new emails at all, but the thread is still active, PRESERVE it in the output array as is (assume it is still pending).\n\n### Severity Analysis Logic (Thread Level)\nAnalyze the entire email thread's context to determine the severity:\nhigh: Critical deadlines (within 24 hours), financial impact, service/system interruption, security risks, or explicit requests from high-level management.\nmedium: Routine business requests, deadlines within 3-7 days, or tasks requiring standard coordination.\nlow: General information, non-urgent administrative tasks, or newsletters/notifications.\n\n\n### Classification Rules (By Priority)\n- **Forward**: Clearly intended to be forwarded to others, a specific contact, or another department (e.g., \"Please forward,\" \"Please have XX handle this,\" \"Not my responsibility\").\n\n- **FYI**: Any other informational content requiring no action. Policy Exceptions: Any mention of \"Privacy Notice/Terms/Policy updates\" is strictly FYI. Even if phrases like \"Please visit the link to review/read/check/understand/refer to/view/confirm update contents\" appear, it remains FYI.\nChange to Draft Task ONLY if a \"Mandatory Action\" is required: Agree/Accept (click to agree, re-agree, opt-in/out), Reply, Submit/Upload/Fill out a form, Set up/Verify, Pay/Unsubscribe, or if \"Consequence Keywords\" appear (\"Must,\" \"Otherwise,\" \"If not completed... will result in,\" \"Stop service,\" \"Restrict use\").\n\"Confirm\" Distinction: \"Confirming content\" = FYI; \"Confirming completion of an action\" (Reply/Submit/Payment/Setup) = Draft Task.\n\n- **Draft Task**: Contains a clear request for you to do something, deliver, reply, or process (Note: \"Please\" does not automatically mean a task; if it's just to read/review/check content → FYI).\n\n - **Noise**: Advertisements, promotions, newsletters, push notifications, social media updates, or automated system notifications requiring no action.\n\n### Input\nTarget_ThreadId: {{ $('merge Table').item.json.thread_id }}\nCurrent Time: {{ $now }}\n\nExisting Tasks (from DB):\n{{ $('getTasks').item.json.tasks ? JSON.stringify($('getTasks').item.json.tasks) : \"[]\" }}\n\nEmail Contents (ordered by Receive_Time):\n{{ JSON.stringify($('merge Table').item.json.Content) }}\n\n### MANDATORY OUTPUT RULES\n1. **Tool Usage**: You MUST ONLY provide the result via the `format_final_json_response` tool. DO NOT add any conversational text before or after.\n2. **Enum Strictness**: The \"tag\" value MUST BE EXACTLY one of: \"Noise\", \"Draft Task\", \"FYI\", \"Forward\". Check capitalization carefully.\n3. **Empty Tasks**: If there are no action items, the \"tasks\" field MUST be an empty array: `[]`.\n4. **String Null**: For \"due_date\", if no date is found, you MUST use the literal string \"null\".\n5. **JSON Safety**: All text in \"mail_summary\" and \"task_content\" must be single-line, with all double quotes escaped (\\\") and no actual newline characters.\n",
+        "hasOutputParser": true,
+        "options": {
+          "systemMessage": "You are a helpful assistant"
+        }
+      },
+      "type": "@n8n/n8n-nodes-langchain.agent",
+      "typeVersion": 3.1,
+      "position": [
+        1696,
+        1360
+      ],
+      "id": "940864ea-2cc0-4cfb-a11a-3098540754c5",
+      "name": "Waypoint",
+      "retryOnFail": false,
+      "maxTries": 2,
+      "onError": "continueRegularOutput"
+    },
+    {
+      "parameters": {
+        "rules": {
+          "values": [
+            {
+              "conditions": {
+                "options": {
+                  "caseSensitive": true,
+                  "leftValue": "",
+                  "typeValidation": "strict",
+                  "version": 3
+                },
+                "conditions": [
+                  {
+                    "leftValue": "={{ $json.output.tag }}",
+                    "rightValue": "Draft Task",
+                    "operator": {
+                      "type": "string",
+                      "operation": "equals"
+                    },
+                    "id": "9bb47c1b-3881-4368-8c84-435539ce6479"
+                  }
+                ],
+                "combinator": "and"
+              }
+            },
+            {
+              "conditions": {
+                "options": {
+                  "caseSensitive": true,
+                  "leftValue": "",
+                  "typeValidation": "strict",
+                  "version": 3
+                },
+                "conditions": [
+                  {
+                    "id": "774d228b-7d3c-4e4a-bbe1-9ae2f316a997",
+                    "leftValue": "={{ $json.output.tag }}",
+                    "rightValue": "FYI",
+                    "operator": {
+                      "type": "string",
+                      "operation": "equals",
+                      "name": "filter.operator.equals"
+                    }
+                  }
+                ],
+                "combinator": "and"
+              }
+            },
+            {
+              "conditions": {
+                "options": {
+                  "caseSensitive": true,
+                  "leftValue": "",
+                  "typeValidation": "strict",
+                  "version": 3
+                },
+                "conditions": [
+                  {
+                    "id": "8c68c8a4-0955-4208-8216-dd1e99e7d8b2",
+                    "leftValue": "={{ $json.output.tag }}",
+                    "rightValue": "Forward",
+                    "operator": {
+                      "type": "string",
+                      "operation": "equals",
+                      "name": "filter.operator.equals"
+                    }
+                  }
+                ],
+                "combinator": "and"
+              }
+            },
+            {
+              "conditions": {
+                "options": {
+                  "caseSensitive": true,
+                  "leftValue": "",
+                  "typeValidation": "strict",
+                  "version": 3
+                },
+                "conditions": [
+                  {
+                    "id": "f32d1414-ee9b-4ad9-b49d-a703748a2f74",
+                    "leftValue": "={{ $json.output.tag }}",
+                    "rightValue": "Noise",
+                    "operator": {
+                      "type": "string",
+                      "operation": "equals",
+                      "name": "filter.operator.equals"
+                    }
+                  }
+                ],
+                "combinator": "and"
+              }
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.switch",
+      "typeVersion": 3.4,
+      "position": [
+        2048,
+        1888
+      ],
+      "id": "e6608606-b015-4a2a-a1fb-a028ac6ed3f2",
+      "name": "Switch"
+    },
+    {
+      "parameters": {
+        "operation": "addLabels",
+        "messageId": "={{ $json.id }}",
+        "labelIds": [
+          "Label_1"
+        ]
+      },
+      "type": "n8n-nodes-base.gmail",
+      "typeVersion": 2.2,
+      "position": [
+        1312,
+        560
+      ],
+      "id": "2475bb10-7c21-44e4-a892-a07543a0599b",
+      "name": "Add Waypoint Label",
+      "webhookId": "a6994d9e-aef3-4e58-aed8-8cb8db4f06a2",
+      "credentials": {
+        "gmailOAuth2": {
+          "id": "6XxzwJNQIwuocXy5",
+          "name": "joe.at.waypoint@gmail"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "operation": "addLabels",
+        "messageId": "={{ $('Waypoint').item.json.output.thread_id }}",
+        "labelIds": [
+          "Label_4077052979495320953"
+        ]
+      },
+      "type": "n8n-nodes-base.gmail",
+      "typeVersion": 2.2,
+      "position": [
+        2480,
+        2064
+      ],
+      "id": "013acc12-c223-4a3e-a28b-b7e64f7d807c",
+      "name": "For Your Information",
+      "webhookId": "69bff750-0c5b-42c4-b4ae-11deea7592fc",
+      "credentials": {
+        "gmailOAuth2": {
+          "id": "6XxzwJNQIwuocXy5",
+          "name": "joe.at.waypoint@gmail"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "operation": "addLabels",
+        "messageId": "={{ $('Waypoint').item.json.output.thread_id }}",
+        "labelIds": [
+          "Label_4216453714511468172"
+        ]
+      },
+      "type": "n8n-nodes-base.gmail",
+      "typeVersion": 2.2,
+      "position": [
+        2480,
+        2224
+      ],
+      "id": "f55ad3cf-14b1-4a6a-9d75-d516f1a87409",
+      "name": "Need Forwarded",
+      "webhookId": "69bff750-0c5b-42c4-b4ae-11deea7592fc",
+      "credentials": {
+        "gmailOAuth2": {
+          "id": "6XxzwJNQIwuocXy5",
+          "name": "joe.at.waypoint@gmail"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "operation": "addLabels",
+        "messageId": "={{ $('Waypoint').item.json.output.thread_id }}",
+        "labelIds": [
+          "Label_6042624083616004149"
+        ]
+      },
+      "type": "n8n-nodes-base.gmail",
+      "typeVersion": 2.2,
+      "position": [
+        2480,
+        2384
+      ],
+      "id": "f9f6d0d6-b0c4-446b-8b49-5635d9949e90",
+      "name": "Noise",
+      "webhookId": "69bff750-0c5b-42c4-b4ae-11deea7592fc",
+      "credentials": {
+        "gmailOAuth2": {
+          "id": "6XxzwJNQIwuocXy5",
+          "name": "joe.at.waypoint@gmail"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "operation": "addLabels",
+        "messageId": "={{ $('Waypoint').item.json.output.thread_id }}",
+        "labelIds": [
+          "Label_7004143442767049806"
+        ]
+      },
+      "type": "n8n-nodes-base.gmail",
+      "typeVersion": 2.2,
+      "position": [
+        2480,
+        1888
+      ],
+      "id": "a33ef72d-eb8e-4a75-9579-960b622782c3",
+      "name": "Action Item",
+      "webhookId": "69bff750-0c5b-42c4-b4ae-11deea7592fc",
+      "credentials": {
+        "gmailOAuth2": {
+          "id": "6XxzwJNQIwuocXy5",
+          "name": "joe.at.waypoint@gmail"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 3
+          },
+          "conditions": [
+            {
+              "id": "1526c02d-1a73-42b4-9523-fc9584ec3e35",
+              "leftValue": "={{ $('getTasks').item.json.task_subject }}",
+              "rightValue": "",
+              "operator": {
+                "type": "string",
+                "operation": "empty",
+                "singleValue": true
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.3,
+      "position": [
+        2256,
+        1568
+      ],
+      "id": "4ca9e140-3411-432b-9fa9-0e7c703f0ca7",
+      "name": "If1"
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "9bf98a9f-d5d7-40b6-9284-929a7caf5b40",
+              "name": "task_id",
+              "value": "null",
+              "type": "string"
+            },
+            {
+              "id": "bfaefd0e-fa0a-46ad-96ec-8d6cde824192",
+              "name": "thread_id",
+              "value": "={{ $json.output.thread_id }}",
+              "type": "string"
+            },
+            {
+              "id": "4b9ad218-601a-4983-9b45-c8b6d1b3b13c",
+              "name": "task_subject",
+              "value": "={{ $json['output.tasks'].task_subject }}",
+              "type": "string"
+            },
+            {
+              "id": "bf6c1ee6-4be9-42f6-b9f4-a5d5b187023d",
+              "name": "task_content",
+              "value": "={{ $json['output.tasks'].task_content }}",
+              "type": "string"
+            },
+            {
+              "id": "f7e74099-2c69-4463-9de7-399f4f8d33c5",
+              "name": "due_date",
+              "value": "={{ $json['output.tasks'].due_date }}",
+              "type": "string"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        2480,
+        1744
+      ],
+      "id": "84baff50-9809-4199-a6b1-a45e8931f377",
+      "name": "Set Task Table Value1"
+    },
+    {
+      "parameters": {
+        "operation": "update",
+        "dataTableId": {
+          "__rl": true,
+          "value": "={{ $('Set Table Prefix').first().json[\"User Name\"] + \"_Task_Table\" }}",
+          "mode": "name"
+        },
+        "filters": {
+          "conditions": [
+            {
+              "keyName": "uuid",
+              "keyValue": "={{ $('getTasks').item.json.uuid }}"
+            }
+          ]
+        },
+        "columns": {
+          "mappingMode": "defineBelow",
+          "value": {
+            "task_id": "={{ $json.task_id }}",
+            "thread_id": "={{ $json.thread_id }}",
+            "task_content": "={{ $json.task_content }}",
+            "task_subject": "={{ $json.task_subject }}",
+            "due_date": "={{ $json.due_date }}",
+            "create_task_status": "2",
+            "uuid": "={{ Math.random().toString(36).slice(2) + Date.now() }}"
+          },
+          "matchingColumns": [],
+          "schema": [
+            {
+              "id": "uuid",
+              "displayName": "uuid",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "readOnly": false,
+              "removed": false
+            },
+            {
+              "id": "task_id",
+              "displayName": "task_id",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "readOnly": false,
+              "removed": false
+            },
+            {
+              "id": "thread_id",
+              "displayName": "thread_id",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "readOnly": false,
+              "removed": false
+            },
+            {
+              "id": "task_subject",
+              "displayName": "task_subject",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "readOnly": false,
+              "removed": false
+            },
+            {
+              "id": "task_content",
+              "displayName": "task_content",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "readOnly": false,
+              "removed": false
+            },
+            {
+              "id": "due_date",
+              "displayName": "due_date",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "readOnly": false,
+              "removed": false
+            },
+            {
+              "id": "create_task_status",
+              "displayName": "create_task_status",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "readOnly": false,
+              "removed": false
+            }
+          ],
+          "attemptToConvertTypes": false,
+          "convertFieldsToString": false
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.dataTable",
+      "typeVersion": 1.1,
+      "position": [
+        2704,
+        1744
+      ],
+      "id": "51f6fa7e-1269-4324-ae76-05c3e12d9210",
+      "name": "Update row(s)"
+    },
+    {
+      "parameters": {
+        "options": {}
+      },
+      "type": "n8n-nodes-base.splitInBatches",
+      "typeVersion": 3,
+      "position": [
+        1152,
+        1360
+      ],
+      "id": "deefb0ff-45be-4674-9a4b-16b0ca142404",
+      "name": "Loop Over Items"
+    },
+    {
+      "parameters": {
+        "url": "http://n8n.poyoyo.org:5678/webhook/92e7e523-a2b1-4ead-a59f-8a40bcfd80b3",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.3,
+      "position": [
+        3376,
+        1392
+      ],
+      "id": "e45ae5bb-a568-432c-8cf8-6a989e2d6be3",
+      "name": "HTTP Request"
     }
   ],
-  "pinData": {},
+  "pinData": {
+    "Schedule Trigger": [
+      {
+        "json": {
+          "timestamp": "2026-02-06T15:17:04.944+08:00",
+          "Readable date": "February 6th 2026, 3:17:04 pm",
+          "Readable time": "3:17:04 pm",
+          "Day of week": "Friday",
+          "Year": "2026",
+          "Month": "February",
+          "Day of month": "06",
+          "Hour": "15",
+          "Minute": "17",
+          "Second": "04",
+          "Timezone": "Asia/Taipei (UTC+08:00)"
+        },
+        "pairedItem": {
+          "item": 0
+        }
+      }
+    ]
+  },
   "connections": {
     "Schedule Trigger": {
       "main": [
         [
           {
-            "node": "Edit Fields",
+            "node": "Set Table Prefix",
             "type": "main",
             "index": 0
           }
@@ -354,7 +1395,7 @@
       "main": [
         [
           {
-            "node": "If row does not exist",
+            "node": "Remove from Inbox",
             "type": "main",
             "index": 0
           }
@@ -372,7 +1413,166 @@
         ]
       ]
     },
-    "Edit Fields": {
+    "check mail table if exist": {
+      "main": [
+        [
+          {
+            "node": "Get many messages",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Insert mail data": {
+      "main": [
+        [
+          {
+            "node": "Aggregate",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Structured Output Parser": {
+      "ai_outputParser": [
+        [
+          {
+            "node": "Waypoint",
+            "type": "ai_outputParser",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Get Mail Data": {
+      "main": [
+        [
+          {
+            "node": "Merge",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "Get LLM Data",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Get LLM Data": {
+      "main": [
+        [
+          {
+            "node": "Remove Duplicates",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Merge": {
+      "main": [
+        [
+          {
+            "node": "merge Table",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Remove Duplicates": {
+      "main": [
+        [
+          {
+            "node": "Merge",
+            "type": "main",
+            "index": 1
+          }
+        ]
+      ]
+    },
+    "Split Out": {
+      "main": [
+        [
+          {
+            "node": "If1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Set Task Table Value": {
+      "main": [
+        [
+          {
+            "node": "Insert row",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "merge Table": {
+      "main": [
+        [
+          {
+            "node": "Loop Over Items",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Aggregate": {
+      "main": [
+        [
+          {
+            "node": "Get Mail Data",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Update Mail Table": {
+      "main": [
+        [
+          {
+            "node": "Merge1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Upsert LLM Data": {
+      "main": [
+        [
+          {
+            "node": "Merge1",
+            "type": "main",
+            "index": 1
+          }
+        ]
+      ]
+    },
+    "Insert row": {
+      "main": [
+        [
+          {
+            "node": "Merge1",
+            "type": "main",
+            "index": 2
+          }
+        ]
+      ]
+    },
+    "Set Table Prefix": {
       "main": [
         [
           {
@@ -383,67 +1583,226 @@
         ]
       ]
     },
-    "If": {
+    "Google Gemini Chat Model": {
+      "ai_languageModel": [
+        [
+          {
+            "node": "Waypoint",
+            "type": "ai_languageModel",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Merge1": {
       "main": [
         [
           {
-            "node": "Code in JavaScript",
+            "node": "Aggregate1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Remove from Inbox": {
+      "main": [
+        [
+          {
+            "node": "Add Waypoint Label",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "getTasks": {
+      "main": [
+        [
+          {
+            "node": "Loop Over Items",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Waypoint": {
+      "main": [
+        [
+          {
+            "node": "Upsert LLM Data",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "Split Out",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "Update Mail Table",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "Switch",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Switch": {
+      "main": [
+        [
+          {
+            "node": "Action Item",
             "type": "main",
             "index": 0
           }
         ],
         [
           {
-            "node": "Create a mail table",
+            "node": "For Your Information",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Need Forwarded",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Noise",
             "type": "main",
             "index": 0
           }
         ]
       ]
     },
-    "Create a mail table": {
+    "Aggregate1": {
       "main": [
         [
           {
-            "node": "Code in JavaScript",
+            "node": "HTTP Request",
             "type": "main",
             "index": 0
           }
         ]
       ]
     },
-    "check mail table if exist": {
+    "Add Waypoint Label": {
       "main": [
         [
           {
-            "node": "If",
+            "node": "If row does not exist",
             "type": "main",
             "index": 0
           }
         ]
       ]
     },
-    "Insert mail data": {
-      "main": [
-        []
-      ]
-    },
-    "Code in JavaScript": {
+    "For Your Information": {
       "main": [
         [
           {
-            "node": "Edit Fields2",
+            "node": "Merge1",
+            "type": "main",
+            "index": 3
+          }
+        ]
+      ]
+    },
+    "Need Forwarded": {
+      "main": [
+        [
+          {
+            "node": "Merge1",
+            "type": "main",
+            "index": 3
+          }
+        ]
+      ]
+    },
+    "Noise": {
+      "main": [
+        [
+          {
+            "node": "Merge1",
+            "type": "main",
+            "index": 3
+          }
+        ]
+      ]
+    },
+    "Action Item": {
+      "main": [
+        [
+          {
+            "node": "Merge1",
+            "type": "main",
+            "index": 3
+          }
+        ]
+      ]
+    },
+    "If1": {
+      "main": [
+        [
+          {
+            "node": "Set Task Table Value",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Set Task Table Value1",
             "type": "main",
             "index": 0
           }
         ]
       ]
     },
-    "Edit Fields2": {
+    "Set Task Table Value1": {
       "main": [
         [
           {
-            "node": "Get many messages",
+            "node": "Update row(s)",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Update row(s)": {
+      "main": [
+        [
+          {
+            "node": "Merge1",
+            "type": "main",
+            "index": 2
+          }
+        ]
+      ]
+    },
+    "Loop Over Items": {
+      "main": [
+        [
+          {
+            "node": "Waypoint",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "getTasks",
             "type": "main",
             "index": 0
           }
@@ -456,7 +1815,7 @@
     "executionOrder": "v1",
     "availableInMCP": false
   },
-  "versionId": "a56485a7-de7d-462c-b2db-f96ca16bdee6",
+  "versionId": "0345d852-b709-4e13-920f-88bf9ac7c110",
   "meta": {
     "templateCredsSetupCompleted": true,
     "instanceId": "1d439c4d93c659f0613cd7f721f34cb95f1d33a263ec1a3aee355b8efbb09a1d"

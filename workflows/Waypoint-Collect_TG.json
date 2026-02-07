@@ -1,0 +1,1211 @@
+{
+  "name": "Waypoint-Collect_TG",
+  "nodes": [
+    {
+      "parameters": {
+        "updates": [
+          "callback_query"
+        ],
+        "additionalFields": {}
+      },
+      "type": "n8n-nodes-base.telegramTrigger",
+      "typeVersion": 1.2,
+      "position": [
+        -704,
+        304
+      ],
+      "id": "e60671e3-429a-41e8-8eb3-2c15afa2a32f",
+      "name": "Telegram Trigger",
+      "webhookId": "3e55d9fd-a7b8-468a-9029-43900c40f00a",
+      "credentials": {
+        "telegramApi": {
+          "id": "qBmHU8JjZGYs9w1q",
+          "name": "RK-Telegram"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "mode": "runOnceForEachItem",
+        "language": "pythonNative",
+        "pythonCode": "data = _item[\"json\"][\"callback_query\"][\"data\"]\naction, uuid = data.split(\"_\", 1)\nreturn {\n  \"action\":action,\n  \"uuid\":uuid\n}"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        -432,
+        304
+      ],
+      "id": "9c0d50ff-0588-419c-b473-56509f11448f",
+      "name": "Code in Python",
+      "retryOnFail": false
+    },
+    {
+      "parameters": {
+        "chatId": "-1002483339303",
+        "text": "=建立完成：\n{{ $json.task_subject }}",
+        "additionalFields": {
+          "appendAttribution": false
+        }
+      },
+      "type": "n8n-nodes-base.telegram",
+      "typeVersion": 1.2,
+      "position": [
+        1360,
+        -64
+      ],
+      "id": "01143221-e672-4e08-9eae-dde720035259",
+      "name": "Send a text message",
+      "webhookId": "c8666093-20ce-477d-8b7a-40ed5d00e7dd",
+      "credentials": {
+        "telegramApi": {
+          "id": "qBmHU8JjZGYs9w1q",
+          "name": "RK-Telegram"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 3
+          },
+          "conditions": [
+            {
+              "id": "bb7397d6-9c5d-4656-b516-f4d51a55a311",
+              "leftValue": "={{ $json.due_date }}",
+              "rightValue": "null",
+              "operator": {
+                "type": "string",
+                "operation": "empty",
+                "singleValue": true
+              }
+            },
+            {
+              "id": "51fe9bb7-2dac-483e-8518-0d1d04210eb7",
+              "leftValue": "={{ $json.due_date }}",
+              "rightValue": "null",
+              "operator": {
+                "type": "string",
+                "operation": "equals"
+              }
+            }
+          ],
+          "combinator": "or"
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.3,
+      "position": [
+        560,
+        -64
+      ],
+      "id": "be5fbe86-5cfa-4dc6-ae30-e735a141dfc5",
+      "name": "If due date is null"
+    },
+    {
+      "parameters": {
+        "task": "WWFjSnV4UnlWSlk4Z3pTYQ",
+        "title": "={{ $json.task_subject }}",
+        "additionalFields": {
+          "dueDate": "={{ $json.due_date }}",
+          "notes": "=Task Summary : {{ $json.task_content }}\nThread Url : https://mail.google.com/mail/u/4/#inbox/{{ $json.thread_id }}"
+        }
+      },
+      "type": "n8n-nodes-base.googleTasks",
+      "typeVersion": 1,
+      "position": [
+        832,
+        48
+      ],
+      "id": "0cfa1eef-d664-4ba9-b044-06dfdd26efb1",
+      "name": "Create a task",
+      "credentials": {
+        "googleTasksOAuth2Api": {
+          "id": "lYKVpCrxtLqnT5n6",
+          "name": "Astor_Tasks"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "task": "WWFjSnV4UnlWSlk4Z3pTYQ",
+        "title": "={{ $json.task_subject }}",
+        "additionalFields": {
+          "notes": "=Task Summary : {{ $json.task_content }}\nThread Url : https://mail.google.com/mail/u/4/#inbox/{{ $json.thread_id }}"
+        }
+      },
+      "type": "n8n-nodes-base.googleTasks",
+      "typeVersion": 1,
+      "position": [
+        832,
+        -128
+      ],
+      "id": "8345a900-d12c-4fae-8d1a-ef4fd45d486c",
+      "name": "Create a task with no due date",
+      "credentials": {
+        "googleTasksOAuth2Api": {
+          "id": "lYKVpCrxtLqnT5n6",
+          "name": "Astor_Tasks"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "operation": "update",
+        "dataTableId": {
+          "__rl": true,
+          "value": "jO1VdOXpecfAS7G4",
+          "mode": "list",
+          "cachedResultName": "Waypoint_Task_Table",
+          "cachedResultUrl": "/projects/FrVfm13rbs02W3ED/datatables/jO1VdOXpecfAS7G4"
+        },
+        "matchType": "allConditions",
+        "filters": {
+          "conditions": [
+            {
+              "keyName": "uuid",
+              "keyValue": "={{ $('Code in Python').item.json.uuid }}"
+            }
+          ]
+        },
+        "columns": {
+          "mappingMode": "defineBelow",
+          "value": {
+            "create_task_status": "1",
+            "task_id": "={{ $json.id }}"
+          },
+          "matchingColumns": [],
+          "schema": [
+            {
+              "id": "uuid",
+              "displayName": "uuid",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "readOnly": false,
+              "removed": true
+            },
+            {
+              "id": "task_id",
+              "displayName": "task_id",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "readOnly": false,
+              "removed": false
+            },
+            {
+              "id": "thread_id",
+              "displayName": "thread_id",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "readOnly": false,
+              "removed": true
+            },
+            {
+              "id": "task_subject",
+              "displayName": "task_subject",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "readOnly": false,
+              "removed": true
+            },
+            {
+              "id": "task_content",
+              "displayName": "task_content",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "readOnly": false,
+              "removed": true
+            },
+            {
+              "id": "due_date",
+              "displayName": "due_date",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "readOnly": false,
+              "removed": true
+            },
+            {
+              "id": "create_task_status",
+              "displayName": "create_task_status",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "readOnly": false,
+              "removed": false
+            }
+          ],
+          "attemptToConvertTypes": false,
+          "convertFieldsToString": false
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.dataTable",
+      "typeVersion": 1.1,
+      "position": [
+        1088,
+        -64
+      ],
+      "id": "cc4eab3d-394b-4cff-88be-6ab920a3a4da",
+      "name": "Update_Create_Task"
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 3
+          },
+          "conditions": [
+            {
+              "id": "666153e8-0578-4e33-a36b-0bc319b8f9b8",
+              "leftValue": "={{ $json }}",
+              "rightValue": "",
+              "operator": {
+                "type": "object",
+                "operation": "notEmpty",
+                "singleValue": true
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.3,
+      "position": [
+        336,
+        0
+      ],
+      "id": "1f3d1d2f-2756-42cf-8009-17a5642f1206",
+      "name": "If"
+    },
+    {
+      "parameters": {
+        "rules": {
+          "values": [
+            {
+              "conditions": {
+                "options": {
+                  "caseSensitive": true,
+                  "leftValue": "",
+                  "typeValidation": "strict",
+                  "version": 3
+                },
+                "conditions": [
+                  {
+                    "leftValue": "={{ $json.action }}",
+                    "rightValue": "Create",
+                    "operator": {
+                      "type": "string",
+                      "operation": "equals"
+                    },
+                    "id": "803fbc45-bd56-4598-abbc-4afe30e4f627"
+                  }
+                ],
+                "combinator": "and"
+              }
+            },
+            {
+              "conditions": {
+                "options": {
+                  "caseSensitive": true,
+                  "leftValue": "",
+                  "typeValidation": "strict",
+                  "version": 3
+                },
+                "conditions": [
+                  {
+                    "id": "3c1a4ebf-7de3-43b3-9deb-d309f04210aa",
+                    "leftValue": "={{ $json.action }}",
+                    "rightValue": "Update",
+                    "operator": {
+                      "type": "string",
+                      "operation": "equals",
+                      "name": "filter.operator.equals"
+                    }
+                  }
+                ],
+                "combinator": "and"
+              }
+            },
+            {
+              "conditions": {
+                "options": {
+                  "caseSensitive": true,
+                  "leftValue": "",
+                  "typeValidation": "strict",
+                  "version": 3
+                },
+                "conditions": [
+                  {
+                    "id": "7ac89bb5-0379-4e68-944a-c51371abcb70",
+                    "leftValue": "={{ $json.action }}",
+                    "rightValue": "Skip",
+                    "operator": {
+                      "type": "string",
+                      "operation": "equals",
+                      "name": "filter.operator.equals"
+                    }
+                  }
+                ],
+                "combinator": "and"
+              }
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.switch",
+      "typeVersion": 3.4,
+      "position": [
+        -208,
+        288
+      ],
+      "id": "12c01f08-7046-4e62-9b17-2b4e80c3d67b",
+      "name": "Switch"
+    },
+    {
+      "parameters": {
+        "content": "## Create Task",
+        "height": 432,
+        "width": 1456
+      },
+      "type": "n8n-nodes-base.stickyNote",
+      "typeVersion": 1,
+      "position": [
+        144,
+        -160
+      ],
+      "id": "97f7072b-9d00-4624-b75c-4833d8d4ed6e",
+      "name": "Sticky Note"
+    },
+    {
+      "parameters": {
+        "content": "## Update Task",
+        "height": 432,
+        "width": 1456
+      },
+      "type": "n8n-nodes-base.stickyNote",
+      "typeVersion": 1,
+      "position": [
+        144,
+        272
+      ],
+      "id": "60f7e39e-068f-48a9-84da-f5c6eee069e9",
+      "name": "Sticky Note1"
+    },
+    {
+      "parameters": {
+        "operation": "get",
+        "dataTableId": {
+          "__rl": true,
+          "value": "jO1VdOXpecfAS7G4",
+          "mode": "list",
+          "cachedResultName": "Waypoint_Task_Table",
+          "cachedResultUrl": "/projects/FrVfm13rbs02W3ED/datatables/jO1VdOXpecfAS7G4"
+        },
+        "matchType": "allConditions",
+        "filters": {
+          "conditions": [
+            {
+              "keyName": "uuid",
+              "keyValue": "={{ $json.uuid }}"
+            },
+            {
+              "keyName": "create_task_status",
+              "keyValue": "2"
+            }
+          ]
+        },
+        "returnAll": true
+      },
+      "type": "n8n-nodes-base.dataTable",
+      "typeVersion": 1.1,
+      "position": [
+        192,
+        448
+      ],
+      "id": "3ae53b56-5120-42e6-96a5-ee8ac2abb7f8",
+      "name": "Get row(s)1",
+      "alwaysOutputData": true
+    },
+    {
+      "parameters": {
+        "operation": "get",
+        "dataTableId": {
+          "__rl": true,
+          "value": "jO1VdOXpecfAS7G4",
+          "mode": "list",
+          "cachedResultName": "Waypoint_Task_Table",
+          "cachedResultUrl": "/projects/FrVfm13rbs02W3ED/datatables/jO1VdOXpecfAS7G4"
+        },
+        "matchType": "allConditions",
+        "filters": {
+          "conditions": [
+            {
+              "keyName": "uuid",
+              "keyValue": "={{ $json.uuid }}"
+            },
+            {
+              "keyName": "create_task_status",
+              "keyValue": "0"
+            }
+          ]
+        },
+        "returnAll": true
+      },
+      "type": "n8n-nodes-base.dataTable",
+      "typeVersion": 1.1,
+      "position": [
+        192,
+        0
+      ],
+      "id": "bd533654-7bbd-460a-bf2f-4f17d418d817",
+      "name": "Get Data",
+      "alwaysOutputData": true
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 3
+          },
+          "conditions": [
+            {
+              "id": "666153e8-0578-4e33-a36b-0bc319b8f9b8",
+              "leftValue": "={{ $json }}",
+              "rightValue": "",
+              "operator": {
+                "type": "object",
+                "operation": "notEmpty",
+                "singleValue": true
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.3,
+      "position": [
+        336,
+        448
+      ],
+      "id": "e2ef0ae0-793d-4f0b-951e-9b2dff5f4cc3",
+      "name": "If1"
+    },
+    {
+      "parameters": {
+        "operation": "update",
+        "task": "WWFjSnV4UnlWSlk4Z3pTYQ",
+        "taskId": "={{ $json.task_id }}",
+        "updateFields": {
+          "notes": "=Task Summary : {{ $json.task_content }} \nThread Url : https://mail.google.com/mail/u/4/#inbox/{{ $json.thread_id }}"
+        }
+      },
+      "type": "n8n-nodes-base.googleTasks",
+      "typeVersion": 1,
+      "position": [
+        560,
+        368
+      ],
+      "id": "0c81af4a-0be0-490a-a646-d63f4153b0bf",
+      "name": "Update a task",
+      "credentials": {
+        "googleTasksOAuth2Api": {
+          "id": "lYKVpCrxtLqnT5n6",
+          "name": "Astor_Tasks"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "chatId": "-1002483339303",
+        "text": "=更新完成：\n{{ $json.task_subject }}",
+        "additionalFields": {
+          "appendAttribution": false
+        }
+      },
+      "type": "n8n-nodes-base.telegram",
+      "typeVersion": 1.2,
+      "position": [
+        1360,
+        464
+      ],
+      "id": "73ee4e90-45df-4772-b1c1-5506eafb3129",
+      "name": "Send a text message3",
+      "webhookId": "c8666093-20ce-477d-8b7a-40ed5d00e7dd",
+      "credentials": {
+        "telegramApi": {
+          "id": "qBmHU8JjZGYs9w1q",
+          "name": "RK-Telegram"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "chatId": "-1002483339303",
+        "text": "=無法更新:找不到Task({{ $('Code in Python').item.json.uuid }})",
+        "additionalFields": {
+          "appendAttribution": false
+        }
+      },
+      "type": "n8n-nodes-base.telegram",
+      "typeVersion": 1.2,
+      "position": [
+        560,
+        528
+      ],
+      "id": "33b42e21-9c82-49e6-8fea-57457938b543",
+      "name": "Send Update Failed",
+      "webhookId": "c8666093-20ce-477d-8b7a-40ed5d00e7dd",
+      "credentials": {
+        "telegramApi": {
+          "id": "qBmHU8JjZGYs9w1q",
+          "name": "RK-Telegram"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "chatId": "-1002483339303",
+        "text": "=無法建立:找不到Task({{ $('Code in Python').item.json.uuid }})",
+        "additionalFields": {
+          "appendAttribution": false
+        }
+      },
+      "type": "n8n-nodes-base.telegram",
+      "typeVersion": 1.2,
+      "position": [
+        560,
+        96
+      ],
+      "id": "2d0be568-f73a-4676-b968-e3d876afbc64",
+      "name": "Send Create Failed",
+      "webhookId": "c8666093-20ce-477d-8b7a-40ed5d00e7dd",
+      "credentials": {
+        "telegramApi": {
+          "id": "qBmHU8JjZGYs9w1q",
+          "name": "RK-Telegram"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "content": "## Skip Task",
+        "height": 432,
+        "width": 1456
+      },
+      "type": "n8n-nodes-base.stickyNote",
+      "typeVersion": 1,
+      "position": [
+        144,
+        704
+      ],
+      "id": "d4bd9662-7619-48f0-8014-7f9088305e50",
+      "name": "Sticky Note2"
+    },
+    {
+      "parameters": {
+        "operation": "get",
+        "dataTableId": {
+          "__rl": true,
+          "value": "jO1VdOXpecfAS7G4",
+          "mode": "list",
+          "cachedResultName": "Waypoint_Task_Table",
+          "cachedResultUrl": "/projects/FrVfm13rbs02W3ED/datatables/jO1VdOXpecfAS7G4"
+        },
+        "matchType": "allConditions",
+        "filters": {
+          "conditions": [
+            {
+              "keyName": "uuid",
+              "keyValue": "={{ $json.uuid }}"
+            },
+            {
+              "keyName": "create_task_status",
+              "keyValue": "0"
+            }
+          ]
+        },
+        "returnAll": true
+      },
+      "type": "n8n-nodes-base.dataTable",
+      "typeVersion": 1.1,
+      "position": [
+        192,
+        880
+      ],
+      "id": "3c6de9b6-3e51-4a44-8d80-466e21929a1b",
+      "name": "Get row(s)",
+      "alwaysOutputData": true
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 3
+          },
+          "conditions": [
+            {
+              "id": "666153e8-0578-4e33-a36b-0bc319b8f9b8",
+              "leftValue": "={{ $json }}",
+              "rightValue": "",
+              "operator": {
+                "type": "object",
+                "operation": "notEmpty",
+                "singleValue": true
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.3,
+      "position": [
+        320,
+        880
+      ],
+      "id": "d5ef8d7e-fa33-499a-8fc1-92c69d32e78a",
+      "name": "If2"
+    },
+    {
+      "parameters": {
+        "chatId": "-1002483339303",
+        "text": "=無法處理拒絕請求:找不到Task({{ $('Code in Python').item.json.uuid }})",
+        "additionalFields": {
+          "appendAttribution": false
+        }
+      },
+      "type": "n8n-nodes-base.telegram",
+      "typeVersion": 1.2,
+      "position": [
+        560,
+        960
+      ],
+      "id": "a41b59eb-3b68-4cea-84f5-a52b550f274a",
+      "name": "Send Skip Failed",
+      "webhookId": "c8666093-20ce-477d-8b7a-40ed5d00e7dd",
+      "credentials": {
+        "telegramApi": {
+          "id": "qBmHU8JjZGYs9w1q",
+          "name": "RK-Telegram"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "operation": "update",
+        "dataTableId": {
+          "__rl": true,
+          "value": "jO1VdOXpecfAS7G4",
+          "mode": "list",
+          "cachedResultName": "Waypoint_Task_Table",
+          "cachedResultUrl": "/projects/FrVfm13rbs02W3ED/datatables/jO1VdOXpecfAS7G4"
+        },
+        "matchType": "allConditions",
+        "filters": {
+          "conditions": [
+            {
+              "keyName": "uuid",
+              "keyValue": "={{ $('Code in Python').item.json.uuid }}"
+            }
+          ]
+        },
+        "columns": {
+          "mappingMode": "defineBelow",
+          "value": {
+            "create_task_status": "1",
+            "task_id": "SKIP"
+          },
+          "matchingColumns": [],
+          "schema": [
+            {
+              "id": "uuid",
+              "displayName": "uuid",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "readOnly": false,
+              "removed": true
+            },
+            {
+              "id": "task_id",
+              "displayName": "task_id",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "readOnly": false,
+              "removed": false
+            },
+            {
+              "id": "thread_id",
+              "displayName": "thread_id",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "readOnly": false,
+              "removed": true
+            },
+            {
+              "id": "task_subject",
+              "displayName": "task_subject",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "readOnly": false,
+              "removed": true
+            },
+            {
+              "id": "task_content",
+              "displayName": "task_content",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "readOnly": false,
+              "removed": true
+            },
+            {
+              "id": "due_date",
+              "displayName": "due_date",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "readOnly": false,
+              "removed": true
+            },
+            {
+              "id": "create_task_status",
+              "displayName": "create_task_status",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "readOnly": false,
+              "removed": false
+            }
+          ],
+          "attemptToConvertTypes": false,
+          "convertFieldsToString": false
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.dataTable",
+      "typeVersion": 1.1,
+      "position": [
+        560,
+        816
+      ],
+      "id": "17eb0f13-743c-408d-8112-1311a4ced446",
+      "name": "Update_Create_Task1"
+    },
+    {
+      "parameters": {
+        "chatId": "-1002483339303",
+        "text": "=跳過Task：\n{{ $json.task_subject }}",
+        "additionalFields": {
+          "appendAttribution": false
+        }
+      },
+      "type": "n8n-nodes-base.telegram",
+      "typeVersion": 1.2,
+      "position": [
+        800,
+        880
+      ],
+      "id": "4b78d9a9-bbc8-419b-8777-cd685f006573",
+      "name": "Send a text message4",
+      "webhookId": "c8666093-20ce-477d-8b7a-40ed5d00e7dd",
+      "credentials": {
+        "telegramApi": {
+          "id": "qBmHU8JjZGYs9w1q",
+          "name": "RK-Telegram"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "operation": "update",
+        "dataTableId": {
+          "__rl": true,
+          "value": "jO1VdOXpecfAS7G4",
+          "mode": "list",
+          "cachedResultName": "Waypoint_Task_Table",
+          "cachedResultUrl": "/projects/FrVfm13rbs02W3ED/datatables/jO1VdOXpecfAS7G4"
+        },
+        "filters": {
+          "conditions": [
+            {
+              "keyName": "uuid",
+              "keyValue": "={{ $('Code in Python').item.json.uuid }}"
+            }
+          ]
+        },
+        "columns": {
+          "mappingMode": "defineBelow",
+          "value": {
+            "create_task_status": "1"
+          },
+          "matchingColumns": [],
+          "schema": [
+            {
+              "id": "uuid",
+              "displayName": "uuid",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "readOnly": false,
+              "removed": true
+            },
+            {
+              "id": "task_id",
+              "displayName": "task_id",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "readOnly": false,
+              "removed": true
+            },
+            {
+              "id": "thread_id",
+              "displayName": "thread_id",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "readOnly": false,
+              "removed": true
+            },
+            {
+              "id": "task_subject",
+              "displayName": "task_subject",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "readOnly": false,
+              "removed": true
+            },
+            {
+              "id": "task_content",
+              "displayName": "task_content",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "readOnly": false,
+              "removed": true
+            },
+            {
+              "id": "due_date",
+              "displayName": "due_date",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "readOnly": false,
+              "removed": true
+            },
+            {
+              "id": "create_task_status",
+              "displayName": "create_task_status",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "readOnly": false,
+              "removed": false
+            }
+          ],
+          "attemptToConvertTypes": false,
+          "convertFieldsToString": false
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.dataTable",
+      "typeVersion": 1.1,
+      "position": [
+        800,
+        368
+      ],
+      "id": "aa1df21a-2c23-41bf-9785-696755d3b341",
+      "name": "Update row(s)"
+    }
+  ],
+  "pinData": {},
+  "connections": {
+    "Telegram Trigger": {
+      "main": [
+        [
+          {
+            "node": "Code in Python",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Code in Python": {
+      "main": [
+        [
+          {
+            "node": "Switch",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Send a text message": {
+      "main": [
+        []
+      ]
+    },
+    "If due date is null": {
+      "main": [
+        [
+          {
+            "node": "Create a task with no due date",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Create a task",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Create a task with no due date": {
+      "main": [
+        [
+          {
+            "node": "Update_Create_Task",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Create a task": {
+      "main": [
+        [
+          {
+            "node": "Update_Create_Task",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Update_Create_Task": {
+      "main": [
+        [
+          {
+            "node": "Send a text message",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "If": {
+      "main": [
+        [
+          {
+            "node": "If due date is null",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Send Create Failed",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Switch": {
+      "main": [
+        [
+          {
+            "node": "Get Data",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Get row(s)1",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Get row(s)",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Get Data": {
+      "main": [
+        [
+          {
+            "node": "If",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Get row(s)1": {
+      "main": [
+        [
+          {
+            "node": "If1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "If1": {
+      "main": [
+        [
+          {
+            "node": "Update a task",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Send Update Failed",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Update a task": {
+      "main": [
+        [
+          {
+            "node": "Update row(s)",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Get row(s)": {
+      "main": [
+        [
+          {
+            "node": "If2",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "If2": {
+      "main": [
+        [
+          {
+            "node": "Update_Create_Task1",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Send Skip Failed",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Update_Create_Task1": {
+      "main": [
+        [
+          {
+            "node": "Send a text message4",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Update row(s)": {
+      "main": [
+        [
+          {
+            "node": "Send a text message3",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": true,
+  "settings": {
+    "executionOrder": "v1",
+    "availableInMCP": false
+  },
+  "versionId": "d5ef2977-3f1c-493c-b7f2-196060bf59c0",
+  "meta": {
+    "templateCredsSetupCompleted": true,
+    "instanceId": "1d439c4d93c659f0613cd7f721f34cb95f1d33a263ec1a3aee355b8efbb09a1d"
+  },
+  "id": "5lKLR2FqNgw4aipetpwwI",
+  "tags": []
+}

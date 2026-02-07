@@ -223,7 +223,7 @@
       "type": "n8n-nodes-base.dataTable",
       "typeVersion": 1.1,
       "position": [
-        -736,
+        -704,
         160
       ],
       "id": "636cbf8f-c240-43e4-8249-6538f836ab92",
@@ -283,7 +283,10 @@
         160
       ],
       "id": "d4396f25-f7a3-4396-818a-f1f95b97aea8",
-      "name": "AI Agent"
+      "name": "AI Agent",
+      "retryOnFail": true,
+      "maxTries": 2,
+      "onError": "continueRegularOutput"
     },
     {
       "parameters": {
@@ -351,7 +354,8 @@
         16
       ],
       "id": "c26e8df4-cb9c-4e00-89ae-6f7dca2dc56a",
-      "name": "Delete row(s)1"
+      "name": "Delete row(s)1",
+      "disabled": true
     },
     {
       "parameters": {
@@ -506,8 +510,8 @@
       "parameters": {
         "dataTableId": {
           "__rl": true,
-          "mode": "name",
-          "value": "={{ $('Edit Fields').item.json['User Name']+\"_Task_Table\" }}"
+          "value": "={{ $('Edit Fields').first(0).json['User Name']+\"_Task_Table\" }}",
+          "mode": "name"
         },
         "columns": {
           "mappingMode": "defineBelow",
@@ -517,10 +521,21 @@
             "task_subject": "={{ $json['output.final_tasks'].task_subject }}",
             "task_content": "={{ $json['output.final_tasks'].task_content }}",
             "due_date": "={{ $json['output.final_tasks'].due_date }}",
-            "create_task_status": "={{ $json['output.final_tasks'].create_task_status }}"
+            "create_task_status": "={{ $json['output.final_tasks'].create_task_status }}",
+            "uuid": "={{ Math.random().toString(36).slice(2) + Date.now() }}"
           },
           "matchingColumns": [],
           "schema": [
+            {
+              "id": "uuid",
+              "displayName": "uuid",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "readOnly": false,
+              "removed": false
+            },
             {
               "id": "task_id",
               "displayName": "task_id",
@@ -601,9 +616,10 @@
         "operation": "update",
         "dataTableId": {
           "__rl": true,
-          "value": "={{ $('Edit Fields').item.json['User Name']+\"_LLM_Table\" }}",
+          "value": "={{ $('Edit Fields').first(0).json['User Name']+\"_LLM_Table\" }}",
           "mode": "name"
         },
+        "matchType": "allConditions",
         "filters": {
           "conditions": [
             {
@@ -914,7 +930,7 @@
     "executionOrder": "v1",
     "availableInMCP": false
   },
-  "versionId": "e8df4e35-141e-406a-9034-f97f78b16f20",
+  "versionId": "53fb8323-efcf-4c3f-919e-8b3221ab48b7",
   "meta": {
     "templateCredsSetupCompleted": true,
     "instanceId": "1d439c4d93c659f0613cd7f721f34cb95f1d33a263ec1a3aee355b8efbb09a1d"

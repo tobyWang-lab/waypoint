@@ -1,0 +1,258 @@
+{
+  "name": "Waypoint-Telegram-Approve Or Decline Flow",
+  "nodes": [
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "=https://api.telegram.org/bot8431212974:AAGWxn80kvMyRmSRQIPlJcZJLLAmgDDV6_M/sendMessage",
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={\n  \"chat_id\": \"-1002483339303\",\n  \"parse_mode\": \"Markdown\",\n  \"text\": \"是否批准建立 Task？\\n\\n```\\n摘要:\\n{{ $('Get_Task').item.json.task_subject }}\\n\\n內容:\\n{{ $('Get_Task').item.json.task_content }}\\n```\",\n  \"reply_markup\": {\n    \"inline_keyboard\": [\n      [\n        {\n          \"text\": \"✅ Approve\",\n          \"callback_data\": \"Create_{{ $('Get_Task').item.json.uuid }}\"\n        },\n        {\n          \"text\": \"❌ Decline\",\n          \"callback_data\": \"Skip_{{ $('Get_Task').item.json.uuid }}\"\n        }\n      ]\n    ]\n  }\n}\n",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.3,
+      "position": [
+        -560,
+        672
+      ],
+      "id": "ae18ad5b-cb6d-4212-951d-68ee408aed72",
+      "name": "HTTP Request1"
+    },
+    {
+      "parameters": {
+        "options": {}
+      },
+      "type": "n8n-nodes-base.splitInBatches",
+      "typeVersion": 3,
+      "position": [
+        -752,
+        608
+      ],
+      "id": "78f97ddf-6677-4dae-91f7-514ee607ed43",
+      "name": "Loop Over Items"
+    },
+    {
+      "parameters": {
+        "amount": 1
+      },
+      "type": "n8n-nodes-base.wait",
+      "typeVersion": 1.1,
+      "position": [
+        -368,
+        720
+      ],
+      "id": "51d005f8-35f2-48bf-9a52-e50e7e8b112d",
+      "name": "Wait",
+      "webhookId": "7dd8b461-13f0-4713-80c4-2e40ff15b3df"
+    },
+    {
+      "parameters": {
+        "jsCode": "// ===== 取得輸入資料 =====\nconst items = $input.all();\nconst total = items.length;\n\n// ===== 初始化分類統計 =====\nconst stats = {\n  \"Draft Task\": 0,\n  \"FYI\": 0,\n  \"Noise\": 0,\n  \"Forward\": 0\n};\n\n// ===== 根據 tag 統計 =====\nitems.forEach(item => {\n  const tag = item.json.tag;\n  if (stats.hasOwnProperty(tag)) {\n    stats[tag]++;\n  }\n});\n\n// ===== 時間處理（GMT+8）=====\nconst now = new Date();\nconst currentDate = now.toLocaleDateString('en-US', {\n  month: '2-digit',\n  day: '2-digit'\n});\nconst currentTime = now.toLocaleTimeString('en-US', {\n  hour12: false,\n  hour: '2-digit',\n  minute: '2-digit'\n});\n\n// ===== 組合 Telegram 訊息 =====\nconst message = `🚀 WAYPOINT Intelligence Summary\n────────────────────────\n📅 ${currentDate} ${currentTime} (GMT+8)\n\n📊 Volume: ${total} Email(s) Processed\n────────────────────────\n🎯 Action Items   | ${stats[\"Draft Task\"]} Thread(s) (Synced to Google Tasks)\n💡 Intelligence   | ${stats[\"FYI\"]} Email(s) (Categorized as FYI)\n🧹 Auto-Filtered  | ${stats[\"Forward\"] + stats[\"Noise\"]} Email(s) (Noise & Forwards)\n\n${stats[\"Draft Task\"] > 0\n  ? \"⚠️ Action items detected. Review recommended.\"\n  : \"✅ All signals processed. You're clear to focus on what matters!\"\n}`;\n\n// ===== 回傳給 Telegram / 下游節點 =====\nreturn {\n  telegramMessage: message,\n  summary: {\n    total,\n    stats\n  }\n};\n"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        -1024,
+        400
+      ],
+      "id": "2ca5b47e-2b5b-422c-b4f2-106490800fd1",
+      "name": "Code in JavaScript2"
+    },
+    {
+      "parameters": {
+        "chatId": "-1002483339303",
+        "text": "={{ $json.telegramMessage }}",
+        "additionalFields": {
+          "appendAttribution": false
+        }
+      },
+      "type": "n8n-nodes-base.telegram",
+      "typeVersion": 1.2,
+      "position": [
+        -800,
+        400
+      ],
+      "id": "c1ccfa3a-5292-4e68-9ba4-bbaaa1452c1d",
+      "name": "Send a text message",
+      "webhookId": "bbba00e0-5d18-4df1-9f62-c2a6c3aab531",
+      "credentials": {
+        "telegramApi": {
+          "id": "qBmHU8JjZGYs9w1q",
+          "name": "RK-Telegram"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "operation": "get",
+        "dataTableId": {
+          "__rl": true,
+          "value": "5NeW1H64HuzhXJUj",
+          "mode": "list",
+          "cachedResultName": "Waypoint_LLM_Table",
+          "cachedResultUrl": "/projects/FrVfm13rbs02W3ED/datatables/5NeW1H64HuzhXJUj"
+        },
+        "matchType": "allConditions",
+        "returnAll": true
+      },
+      "type": "n8n-nodes-base.dataTable",
+      "typeVersion": 1.1,
+      "position": [
+        -1216,
+        400
+      ],
+      "id": "27dc2ecc-1d9b-4e11-8014-50b20542601f",
+      "name": "Get row(s)1"
+    },
+    {
+      "parameters": {
+        "operation": "get",
+        "dataTableId": {
+          "__rl": true,
+          "value": "jO1VdOXpecfAS7G4",
+          "mode": "list",
+          "cachedResultName": "Waypoint_Task_Table",
+          "cachedResultUrl": "/projects/FrVfm13rbs02W3ED/datatables/jO1VdOXpecfAS7G4"
+        },
+        "matchType": "allConditions",
+        "filters": {
+          "conditions": [
+            {
+              "keyName": "create_task_status",
+              "keyValue": "0"
+            }
+          ]
+        },
+        "returnAll": true
+      },
+      "type": "n8n-nodes-base.dataTable",
+      "typeVersion": 1.1,
+      "position": [
+        -1024,
+        608
+      ],
+      "id": "461babb9-a539-4163-a051-93a2ed07a928",
+      "name": "Get_Task"
+    },
+    {
+      "parameters": {
+        "path": "92e7e523-a2b1-4ead-a59f-8a40bcfd80b3",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 2.1,
+      "position": [
+        -1440,
+        400
+      ],
+      "id": "1ffe1c95-065c-4b1e-975f-b70793fa1e85",
+      "name": "Webhook",
+      "webhookId": "92e7e523-a2b1-4ead-a59f-8a40bcfd80b3"
+    }
+  ],
+  "pinData": {},
+  "connections": {
+    "HTTP Request1": {
+      "main": [
+        [
+          {
+            "node": "Wait",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Loop Over Items": {
+      "main": [
+        [],
+        [
+          {
+            "node": "HTTP Request1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Wait": {
+      "main": [
+        [
+          {
+            "node": "Loop Over Items",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Code in JavaScript2": {
+      "main": [
+        [
+          {
+            "node": "Send a text message",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Get row(s)1": {
+      "main": [
+        [
+          {
+            "node": "Code in JavaScript2",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Send a text message": {
+      "main": [
+        [
+          {
+            "node": "Get_Task",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Get_Task": {
+      "main": [
+        [
+          {
+            "node": "Loop Over Items",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Webhook": {
+      "main": [
+        [
+          {
+            "node": "Get row(s)1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": true,
+  "settings": {
+    "executionOrder": "v1",
+    "availableInMCP": false
+  },
+  "versionId": "10a97274-736b-4702-8210-0e60f1c22b89",
+  "meta": {
+    "templateCredsSetupCompleted": true,
+    "instanceId": "1d439c4d93c659f0613cd7f721f34cb95f1d33a263ec1a3aee355b8efbb09a1d"
+  },
+  "id": "iYNmddlfxaqsuvlI6fVM0",
+  "tags": []
+}
