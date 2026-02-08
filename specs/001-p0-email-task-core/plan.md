@@ -50,7 +50,8 @@ workflows/
 ├── Waypoint-classifier.json                  # Intelligence module (Thread analysis) - Integrated in Collect_TG
 ├── Waypoint-Collect_TG.json                  # Integrated Intelligence & Notification module
 ├── Waypoint-task.json                        # Synchronization module (Sync Expert)
-└── Waypoint-Telegram-Approve Or Decline Flow.json # HITL Navigation module
+├── Waypoint-Telegram-Approve Or Decline Flow.json # HITL Navigation module
+└── waypoint-error-trigger.json               # Error Handling & Compliance module
 ```
 
 **Structure Decision**: Documentation-driven plan; workflow JSON will be stored under workflows/ when implemented.
