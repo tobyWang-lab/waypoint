@@ -28,9 +28,9 @@ description: "Task list for P0 Email-to-Task Core Pipeline"
 
 **Purpose**: n8n Docker setup requirements and credential prerequisites
 
-- [X] T001 Create base workflow file at workflows/waypoint-email-to-tasks.json with workflow metadata and empty node graph. DoD: file exists with valid n8n JSON structure; Verify: open and validate JSON structure in workflows/waypoint-email-to-tasks.json.
+- [X] T001 Create base modular workflows (Retriever, Classifier, Task, Telegram). DoD: files exist with valid n8n JSON structure; Verify: open and validate JSON structure in workflows/ folder.
 - [X] T002 [P] Document required n8n environment settings (including N8N_EXECUTION_PROCESS_DATA_PRUNING and execution data saving disabled) in specs/001-p0-email-task-core/quickstart.md. DoD: env var names and required values are listed; Verify: review updated section in specs/001-p0-email-task-core/quickstart.md.
-- [X] T003 Add credential placeholders for Gmail/Google Tasks OAuth and LLM provider in workflows/waypoint-email-to-tasks.json. DoD: workflow nodes reference credential names/scopes; Verify: inspect credential blocks in workflows/waypoint-email-to-tasks.json.
+- [X] T003 Add credential placeholders for Gmail/Google Tasks OAuth and LLM provider in modular workflows. DoD: workflow nodes reference credential names/scopes; Verify: inspect credential blocks in workflows/*.json.
 
 ---
 
@@ -42,9 +42,9 @@ description: "Task list for P0 Email-to-Task Core Pipeline"
 
 ### Implementation for User Story 1
 
-- [X] T004 [US1] Configure Gmail trigger/polling node to fetch unread inbox emails and exclude label "WAYPOINT-Processed" in workflows/waypoint-email-to-tasks.json. DoD: Gmail node filters unread inbox and label exclusion; Verify: node query/filters in workflows/waypoint-email-to-tasks.json.
-- [X] T005 [US1] Add Gmail message detail retrieval in workflows/waypoint-email-to-tasks.json. DoD: message payload includes body; Verify: node output mapping in workflows/waypoint-email-to-tasks.json.
-- [X] T006 [US1] Add Code node to cap email body length, setting statusReason on oversize in workflows/waypoint-email-to-tasks.json. DoD: size caps applied and oversize flagged as partial; Verify: code logic present in workflows/waypoint-email-to-tasks.json.
+- [X] T004 [US1] Configure Gmail trigger/polling node to fetch unread inbox emails and exclude label "WAYPOINT-Processed" in workflows/Waypoint-mail-retriever.json. DoD: Gmail node filters unread inbox and label exclusion; Verify: node query/filters in workflows/Waypoint-mail-retriever.json.
+- [X] T005 [US1] Add Gmail message detail retrieval in workflows/Waypoint-mail-retriever.json. DoD: message payload includes body; Verify: node output mapping in workflows/Waypoint-mail-retriever.json.
+- [X] T006 [US1] Add Code node to cap email body length, setting statusReason on oversize in workflows/Waypoint-mail-retriever.json. DoD: size caps applied and oversize flagged as partial; Verify: code logic present in workflows/Waypoint-mail-retriever.json.
 
 **Checkpoint**: User Story 1 is independently testable and enforces stateless ingestion.
 
@@ -58,8 +58,8 @@ description: "Task list for P0 Email-to-Task Core Pipeline"
 
 **Independent Test**: Ingest known noise emails and verify they are classified as Noise and skipped.
 
-- [X] T007 [US2] Add AI Agent node prompt for noise classification and category output in workflows/waypoint-email-to-tasks.json. DoD: prompt yields Noise/Signal + category; Verify: prompt text and output schema in workflows/waypoint-email-to-tasks.json.
-- [X] T008 [US2] Add routing logic to short-circuit Noise items with status "skipped" in workflows/waypoint-email-to-tasks.json. DoD: Noise items do not proceed to intent/extraction; Verify: IF/Switch logic in workflows/waypoint-email-to-tasks.json.
+- [X] T007 [US2] Add AI Agent node prompt for noise classification and category output in workflows/Waypoint-classifier.json. DoD: prompt yields Noise/Signal + category; Verify: prompt text and output schema in workflows/Waypoint-classifier.json.
+- [X] T008 [US2] Add routing logic to short-circuit Noise items with status "skipped" in workflows/Waypoint-classifier.json. DoD: Noise items do not proceed to intent/extraction; Verify: IF/Switch logic in workflows/Waypoint-classifier.json.
 
 ### User Story 3 - Intent Classification (Priority: P1)
 
@@ -67,7 +67,7 @@ description: "Task list for P0 Email-to-Task Core Pipeline"
 
 **Independent Test**: Submit sample emails and verify intent classification accuracy.
 
-- [X] T009 [US3] Add AI Agent node (or prompt branch) for intent classification with confidence in workflows/waypoint-email-to-tasks.json. DoD: intent output includes Actionable/FYI/Forward; Verify: node configuration in workflows/waypoint-email-to-tasks.json.
+- [X] T009 [US3] Add AI Agent node (or prompt branch) for intent classification with confidence in workflows/Waypoint-classifier.json. DoD: intent output includes Actionable/FYI/Forward; Verify: node configuration in workflows/Waypoint-classifier.json.
 
 ### User Story 4 - Waypoint Extraction (Priority: P1)
 
@@ -75,8 +75,8 @@ description: "Task list for P0 Email-to-Task Core Pipeline"
 
 **Independent Test**: Provide emails with known fields and verify extracted Task Card fields.
 
-- [X] T010 [US4] Add AI Agent extraction prompt to produce Task Card fields in workflows/waypoint-email-to-tasks.json. DoD: extraction output includes dueDate/stakeholders/actionItems; Verify: prompt and output mapping in workflows/waypoint-email-to-tasks.json.
-- [X] T011 [US4] Validate Task Card output against contracts/task-card.schema.json in workflows/waypoint-email-to-tasks.json. DoD: invalid outputs set partial status with statusReason; Verify: schema validation logic and contract path in workflows/waypoint-email-to-tasks.json.
+- [X] T010 [US4] Add AI Agent extraction prompt to produce Task Card fields in workflows/Waypoint-classifier.json. DoD: extraction output includes dueDate/stakeholders/actionItems; Verify: prompt and output mapping in workflows/Waypoint-classifier.json.
+- [X] T011 [US4] Validate Task Card output against contracts/task-card.schema.json in workflows/Waypoint-classifier.json. DoD: invalid outputs set partial status with statusReason; Verify: schema validation logic and contract path in workflows/Waypoint-classifier.json.
 
 **Checkpoint**: User Stories 2–4 are independently testable and yield valid Task Cards.
 
@@ -88,23 +88,24 @@ description: "Task list for P0 Email-to-Task Core Pipeline"
 
 **Independent Test**: Create a Task Card and confirm Google Task creation, RFC 3339 due date, and Gmail labeling.
 
-- [ ] T012 [US5] Add transform step to convert ISO 8601 dueDate to RFC 3339 (omit on failure) in workflows/waypoint-email-to-tasks.json. DoD: conversion applied or omitted with statusReason; Verify: transform logic in workflows/waypoint-email-to-tasks.json.
-- [X] T013 [US5] Add Google Tasks lookup/list step to check idempotency key (ThreadId/MessageId) in notes before create to handle mail loops. DoD: existing ThreadId skips or updates task; Verify: list+filter logic in workflows/waypoint-email-to-tasks.json.
+- [X] T012 [US5] Implement RFC 3339 dueDate output directly from AI Agent in workflows/Waypoint-classifier.json. DoD: AI outputs correctly formatted date or "null"; Verify: prompt and output parser in workflows/Waypoint-classifier.json.
+- [X] T013 [US5] Add Google Tasks lookup/list step to check idempotency key (ThreadId/MessageId) in notes before create to handle mail loops. DoD: existing ThreadId skips or updates task; Verify: list+filter logic in workflows/Waypoint-task.json.
 - [X] T013a [US5] Enhance deduplication to handle mail loops: If ThreadId exists, append new snippet to existing task instead of creating new one. DoD: no duplicate tasks for same thread; Verify: integration test with multi-email thread.
-- [X] T014 [US5] Add Google Tasks create node mapping to contracts/google-tasks-sync.request.json in workflows/waypoint-email-to-tasks.json. DoD: title/notes/due mapping matches contract; Verify: node fields and mapping in workflows/waypoint-email-to-tasks.json.
-- [X] T015 [US5] Add Gmail label node to apply "WAYPOINT-Processed" after successful sync in workflows/waypoint-email-to-tasks.json (Implemented in Waypoint_Telegram.json). DoD: label applied only on sync success; Verify: node placement/conditions in workflows/Waypoint_Telegram.json.
-- [ ] T016 [US5] Create Error Trigger workflow in workflows/waypoint-error-trigger.json emitting non-PII events per contracts/error-event.schema.json. DoD: error workflow references schema fields and excludes PII; Verify: review workflows/waypoint-error-trigger.json.
+- [X] T014 [US5] Add Google Tasks create node mapping to contracts/google-tasks-sync.request.json in workflows/Waypoint-task.json. DoD: title/notes/due mapping matches contract; Verify: node fields and mapping in workflows/Waypoint-task.json.
+- [X] T015 [US5] Add Gmail label node to apply "WAYPOINT-Processed" after successful sync in workflows/Waypoint-task.json. DoD: label applied only on sync success; Verify: node placement/conditions in workflows/Waypoint-task.json.
+- [X] T016 [US5] Create Error Trigger workflow in workflows/waypoint-error-trigger.json emitting non-PII events per contracts/error-event.schema.json. DoD: error workflow references schema fields and excludes PII; Verify: review workflows/waypoint-error-trigger.json.
 
 ---
 
-## Phase 6: Notification — User Story 6 (Priority: P1)
+## Phase 6: Notification & HITL — User Story 6 (Priority: P1)
 
-**Goal**: Deliver a high-density intelligence summary to Telegram for immediate awareness.
+**Goal**: Deliver a high-density intelligence summary to Telegram and enable user-driven navigation (Approve/Decline).
 
-- [X] T020 [US6] Create Telegram notification workflow in workflows/Waypoint_Telegram.json. DoD: workflow exists and can send messages; Verify: manual trigger test.
-- [X] T021 [US6] Implement high-density Markdown V2 template for Telegram reports (Total processed, Actionable/FYI/Noise counts). DoD: template matches Hackathon standards; Verify: inspect template in workflows/Waypoint_Telegram.json.
-- [X] T022 [US6] Aggregate Draft Task details in Telegram summary (Subject, ThreadId, AI Summary, SourceLink). DoD: summary includes critical action items; Verify: integration test.
-- [X] T023 [US6] Implement scheduled summary delivery (e.g., 08:00, 12:00, 18:00) in workflows/Waypoint_Telegram.json. DoD: scheduler configured; Verify: inspect trigger settings.
+- [X] T020 [US6] Create Telegram notification workflow in workflows/Waypoint-Collect_TG.json. DoD: workflow exists and can send messages; Verify: manual trigger test.
+- [X] T021 [US6] Implement high-density Markdown V2 template for Telegram reports (Total processed, Actionable/FYI/Noise counts). DoD: template matches Hackathon standards; Verify: inspect template in workflows/Waypoint-Collect_TG.json.
+- [X] T022 [US6] Aggregate Draft Task details in Telegram summary with Interactive Buttons (Approve/Decline). DoD: summary includes critical action items and webhook triggers; Verify: integration test.
+- [X] T023 [US6] Implement "Approve or Decline Flow" in workflows/Waypoint-Telegram-Approve Or Decline Flow.json to handle user decisions. DoD: clicking 'Approve' triggers task sync; Verify: end-to-end navigation test.
+- [X] T024 [US6] Implement scheduled summary delivery (e.g., 08:00, 12:00, 18:00) in workflows/Waypoint-Collect_TG.json. DoD: scheduler configured; Verify: inspect trigger settings.
 
 **Checkpoint**: User Story 5 is independently testable and delivers tasks to Google Tasks with deduplication.
 
@@ -117,76 +118,3 @@ description: "Task list for P0 Email-to-Task Core Pipeline"
 - [ ] T017 Create workflow execution test checklist in specs/001-p0-email-task-core/testing.md covering US1–US5 acceptance scenarios. DoD: checklist maps to each story’s independent test; Verify: review specs/001-p0-email-task-core/testing.md.
 - [X] T018 [P] Create stateless privacy audit checklist in specs/001-p0-email-task-core/compliance.md (no execution data saved, no PII in logs). DoD: audit steps and pass criteria documented; Verify: review specs/001-p0-email-task-core/compliance.md.
 - [ ] T019 Update specs/001-p0-email-task-core/quickstart.md to reference testing and compliance checklists. DoD: quickstart links to testing/compliance docs; Verify: review specs/001-p0-email-task-core/quickstart.md.
-
----
-
-## Dependencies & Execution Order
-
-### Phase Dependencies
-
-- **Phase 1 (Environment & Credentials)**: No dependencies - can start immediately
-- **Phase 2 (Ingestion & Pre-processing)**: Depends on Phase 1
-- **Phase 3 (AI Intelligence)**: Depends on Phase 2
-- **Phase 4 (Sync & Deduplication)**: Depends on Phase 3
-- **Phase 5 (Testing & Compliance)**: Depends on Phases 1–4
-
-### User Story Dependencies
-
-- **US1 (P1)**: Depends on Phase 1
-- **US2 (P1)**: Depends on US1 output (signal emails)
-- **US3 (P1)**: Depends on US2 output (signal routing)
-- **US4 (P1)**: Depends on US3 output (intent)
-- **US5 (P0)**: Depends on US4 output (Task Cards) and shared transforms
-
-### Within Each User Story
-
-- Implement ingestion before AI steps
-- AI outputs before validation
-- Validation before sync
-- Sync before labeling
-
-### Parallel Opportunities
-
-- T002 and T018 can run in parallel (different files)
-- US2 and US3 prompt edits can be prepared in parallel before integration
-- Documentation tasks in Phase 5 can run in parallel
-
----
-
-## Parallel Example: User Story 2
-
-```bash
-# Parallel prompt and routing tasks:
-Task: "Add AI Agent node prompt for noise classification" (T007)
-Task: "Add routing logic to short-circuit Noise items" (T008)
-```
-
----
-
-## Implementation Strategy
-
-### MVP First (User Story 1 Only)
-
-1. Complete Phase 1
-2. Complete Phase 2 (US1)
-3. **STOP and VALIDATE**: Test US1 independently using Gmail ingestion
-
-### Incremental Delivery
-
-1. Phase 1 → Phase 2 (US1) → Validate
-2. Phase 3 (US2–US4) → Validate
-3. Phase 4 (US5) → Validate
-4. Phase 5 (Testing & Compliance)
-
-### Parallel Team Strategy
-
-- One owner handles workflow JSON updates
-- Another owner prepares testing/compliance docs in parallel
-
----
-
-## Notes
-
-- [P] tasks = different files, no dependencies
-- Each user story is independently testable using the listed acceptance scenarios
-- Avoid introducing stateful storage or dashboard features

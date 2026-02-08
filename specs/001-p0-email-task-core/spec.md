@@ -16,15 +16,15 @@ This specification defines the P0 (Critical) features required to build the core
 - **Epic 3 - Synchronization**: AI-driven Google Tasks state synchronization
 - **Epic 4 - Notification**: Telegram intelligence delivery
 
-The **core pipeline sequence** is: Email Ingestion (Buffered) → Thread-based AI Analysis (Classifier) → AI-driven Task Synchronization (Sync Expert) → Telegram Notification Summary.
+The **core pipeline sequence** is: Email Ingestion (Buffered) → Thread-based AI Analysis (Classifier) → Telegram Intelligence Report with Interactive Navigation (HITL) → User-Approved Task Synchronization (Sync Expert).
 
 All features adhere to the Constitution's **Stateless Processing** principle—no email content persists beyond processing.
 
 ## Target Environment: n8n
 
-This specification defines the Email-to-Task pipeline as an n8n workflow. All components MUST:
+This specification defines the Email-to-Task pipeline as a modular n8n workflow architecture. All components MUST:
 - Be deployable as n8n workflow nodes or steps
-- Use **n8n native nodes** for all interactions (Gmail, Google Tasks, LLM via AI Agent/HTTP)
+- Use **n8n native nodes** for all interactions (Gmail, Google Tasks, LLM via AI Agent/HTTP, Telegram)
 - Use n8n's HTTP request capabilities for external service integration
 - Leverage n8n's credential management for OAuth and API authentication
 - Be exported and versioned in n8n's JSON workflow format
@@ -36,6 +36,12 @@ This specification defines the Email-to-Task pipeline as an n8n workflow. All co
 - Token refresh is handled automatically by n8n's credential system
 - No custom OAuth2 flow implementation required
 - OAuth credential includes **Google Tasks scope** (`https://www.googleapis.com/auth/tasks`) for unified authorization
+
+### Human-in-the-Loop (HITL) Navigation
+
+- Implement **Interactive Telegram Buttons** (Approve/Decline) for each extracted task.
+- Tasks are ONLY synced to Google Tasks after explicit user approval via Telegram.
+- Use a dedicated "Approve or Decline Flow" to handle webhook callbacks from Telegram.
 
 ### Noise Filtering Implementation
 
