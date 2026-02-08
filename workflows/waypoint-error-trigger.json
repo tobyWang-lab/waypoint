@@ -1,0 +1,80 @@
+{
+  "name": "waypoint-error-trigger",
+  "nodes": [
+    {
+      "parameters": {},
+      "type": "n8n-nodes-base.errorTrigger",
+      "typeVersion": 1,
+      "position": [
+        0,
+        0
+      ],
+      "id": "e1",
+      "name": "Error Trigger"
+    },
+    {
+      "parameters": {
+        "jsCode": "// 核心邏輯：剔除 PII，只保留結構化錯誤資訊\nconst errorData = $input.item.json.execution;\nreturn {\n  event_type: \"WORKFLOW_ERROR\",\n  workflow_id: errorData.workflowId,\n  node_name: errorData.lastNodeExecuted,\n  error_message: errorData.error.message.substring(0, 200), // 限制長度\n  timestamp: new Date().toISOString(),\n  is_pii_safe: true\n};"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        220,
+        0
+      ],
+      "id": "e2",
+      "name": "PII Filter"
+    },
+    {
+      "parameters": {
+        "chatId": "5964064324",
+        "text": "=⚠️ *WAYPOINT Error Alert*\n──────────────────\n🔴 *Workflow*: {{ $json.workflow_id }}\n📍 *Node*: {{ $json.node_name }}\n💬 *Error*: {{ $json.error_message }}\n🕒 *Time*: {{ $json.timestamp }}\n\n_System status: Automated cleanup initiated._",
+        "additionalFields": {
+          "parse_mode": "Markdown"
+        }
+      },
+      "type": "n8n-nodes-base.telegram",
+      "typeVersion": 1.2,
+      "position": [
+        440,
+        0
+      ],
+      "id": "e3",
+      "name": "Notify Developer",
+      "credentials": {
+        "telegramApi": {
+          "id": "A3xGBHBS9a1WWTYW",
+          "name": "Toby_Telegram"
+        }
+      }
+    }
+  ],
+  "connections": {
+    "Error Trigger": {
+      "main": [
+        [
+          {
+            "node": "PII Filter",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "PII Filter": {
+      "main": [
+        [
+          {
+            "node": "Notify Developer",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": true,
+  "settings": {
+    "executionOrder": "v1"
+  }
+}
