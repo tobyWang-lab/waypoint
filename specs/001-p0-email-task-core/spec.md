@@ -68,7 +68,6 @@ This specification defines the Email-to-Task pipeline as a modular n8n workflow 
 ### Error Handling Strategy
 
 - Use **"Continue on Fail"** setting on LLM nodes for retryable errors (timeouts, rate limits)
-- Use **Error Trigger workflow** to catch and log permanent failures (auth errors, malformed responses)
 - Inline Code node after LLM nodes validates response and returns partial results with error status
 - Cap LLM input size; skip oversized items with partial status and reason
 
