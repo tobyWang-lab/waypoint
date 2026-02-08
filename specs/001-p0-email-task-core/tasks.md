@@ -5,116 +5,145 @@ description: "Task list for P0 Email-to-Task Core Pipeline"
 
 # Tasks: P0 Email-to-Task Core Pipeline
 
-**Input**: Design documents from `/specs/001-p0-email-task-core/`
-**Prerequisites**: plan.md (required), spec.md (required for user stories), research.md, data-model.md, contracts/
+**Input**: `/specs/001-p0-email-task-core/plan.md` and `/specs/001-p0-email-task-core/spec.md`  
+**Prerequisites**: `plan.md` (required), `spec.md` (required), `quickstart.md` (recommended), `testing.md` (recommended), `compliance.md` (recommended)
 
-**Tests**: Tests are included because the feature requires workflow execution validation and compliance checks.
+## Scope Anchor (MUST match plan.md + repo snapshot)
 
-**Organization**: Tasks are grouped by user story to enable independent implementation and testing of each story.
+**Workflows present in `/workflows/` (in-scope):**
+- `workflows/Waypoint-mail-retriever.json`
+- `workflows/Waypoint-Telegram-Approve Or Decline Flow.json`
+- `workflows/Waypoint-Collect_TG.json`
+
+**Explicitly deferred (out of scope for this repo snapshot):**
+- Google Tasks sync workflow (Epic 3) and any “Sync Expert” logic
+- Dedicated Error Trigger workflow JSON artifact (`workflows/waypoint-error-trigger.json`)
+
+**Implemented execution sequence (as per plan.md):**  
+`Waypoint-mail-retriever.json` → `Waypoint-Telegram-Approve Or Decline Flow.json` → `Waypoint-Collect_TG.json`
+
+---
 
 ## Format: `[ID] [P?] [Story] Description`
 
 - **[P]**: Can run in parallel (different files, no dependencies)
-- **[Story]**: Which user story this task belongs to (e.g., US1, US2, US3)
+- **[Story]**: Which user story this task belongs to (US1–US4)
 - Include exact file paths in descriptions
 
-## Path Conventions
+---
 
-- **Single project**: `workflows/`, `specs/` at repository root
+## User Stories (Plan-aligned)
+
+- **US1 — Ingestion & Buffering**: Fetch unread Gmail, dedupe by `messageId`, buffer minimal derived data in ODS.
+- **US2 — Telegram HITL**: Handle Approve/Decline callbacks and persist approval state (no external side effects).
+- **US3 — Telegram Intelligence Report**: Publish summaries (Tasks/FYI/Noise counts) and navigation context.
+- **US4 — Compliance & Validation**: Stateless enforcement (SC-007), schema validation (SC-008), performance + delivery checks (SC-002/SC-014).
+
+> Note: AI classifier/extraction is referenced in spec/plan as a dependency, but there is **no separate classifier workflow JSON** in `/workflows/` today. Any AI steps must exist inside the current three workflows, or remain deferred.
 
 ---
 
-## Phase 1: Environment & Credentials (Setup)
+## Phase 1: Environment & Stateless Enforcement (Setup)
 
-**Purpose**: n8n Docker setup requirements and credential prerequisites
+**Goal**: Ensure the runtime is configured to avoid raw content retention and to support audits.
 
-- [X] T001 Create base modular workflows (Retriever, Classifier, Task, Telegram). DoD: files exist with valid n8n JSON structure; Verify: open and validate JSON structure in workflows/ folder.
-- [X] T002 [P] Document required n8n environment settings (including N8N_EXECUTION_PROCESS_DATA_PRUNING and execution data saving disabled) in specs/001-p0-email-task-core/quickstart.md. DoD: env var names and required values are listed; Verify: review updated section in specs/001-p0-email-task-core/quickstart.md.
-- [X] T003 Add credential placeholders for Gmail/Google Tasks OAuth and LLM provider in modular workflows. DoD: workflow nodes reference credential names/scopes; Verify: inspect credential blocks in workflows/*.json.
+- [ ] T001 [P] Confirm execution data retention is disabled/pruned (SC-007) and document exact settings in `specs/001-p0-email-task-core/quickstart.md`.  
+  DoD: quickstart lists the exact n8n settings/env vars to enforce pruning; Verify: reviewer can apply settings and see executions do not retain raw email content.
 
----
+- [ ] T002 [P] Create/update privacy audit checklist (SC-007) in `specs/001-p0-email-task-core/compliance.md`.  
+  DoD: checklist verifies (1) execution history, (2) ODS tables, (3) logs contain no raw email body/PII beyond allowed minimal fields; Verify: checklist is runnable.
 
-## Phase 2: Ingestion & Pre-processing — User Story 1 (Priority: P1) 🎯 MVP
-
-**Goal**: Secure Gmail OAuth authorization and unread inbox ingestion with pre-processing safeguards.
-
-**Independent Test**: Authorize Gmail and verify unread inbox messages are ingested without persisting raw content.
-
-### Implementation for User Story 1
-
-- [X] T004 [US1] Configure Gmail trigger/polling node to fetch unread inbox emails and exclude label "WAYPOINT-Processed" in workflows/Waypoint-mail-retriever.json. DoD: Gmail node filters unread inbox and label exclusion; Verify: node query/filters in workflows/Waypoint-mail-retriever.json.
-- [X] T005 [US1] Add Gmail message detail retrieval in workflows/Waypoint-mail-retriever.json. DoD: message payload includes body; Verify: node output mapping in workflows/Waypoint-mail-retriever.json.
-- [X] T006 [US1] Add Code node to cap email body length, setting statusReason on oversize in workflows/Waypoint-mail-retriever.json. DoD: size caps applied and oversize flagged as partial; Verify: code logic present in workflows/Waypoint-mail-retriever.json.
-
-**Checkpoint**: User Story 1 is independently testable and enforces stateless ingestion.
+- [ ] T003 [P] Create workflow test checklist (SC-002/SC-008/SC-014) in `specs/001-p0-email-task-core/testing.md`.  
+  DoD: checklist covers happy path + partial/failure cases for the three workflows; Verify: checklist is runnable.
 
 ---
 
-## Phase 3: AI Intelligence — User Stories 2–4 (Priority: P1)
+## Phase 2: Email Ingestion (Buffered) — US1
 
-### User Story 2 - Noise Filtering (Priority: P1)
+**File**: `workflows/Waypoint-mail-retriever.json`
 
-**Goal**: Filter noise and pass only signal to downstream processing.
+- [ ] T010 [US1] Verify Gmail ingestion filters (unread inbox) and excludes already-processed duplicates per spec/plan.  
+  DoD: ingestion only returns intended messages; Verify: run workflow against a test mailbox.
 
-**Independent Test**: Ingest known noise emails and verify they are classified as Noise and skipped.
+- [ ] T011 [US1] Implement/verify deduplication by Gmail `messageId` before writing to ODS.  
+  DoD: re-running ingestion does not create duplicates; Verify: run twice and compare ODS rows.
 
-- [X] T007 [US2] Add AI Agent node prompt for noise classification and category output in workflows/Waypoint-classifier.json. DoD: prompt yields Noise/Signal + category; Verify: prompt text and output schema in workflows/Waypoint-classifier.json.
-- [X] T008 [US2] Add routing logic to short-circuit Noise items with status "skipped" in workflows/Waypoint-classifier.json. DoD: Noise items do not proceed to intent/extraction; Verify: IF/Switch logic in workflows/Waypoint-classifier.json.
+- [ ] T012 [US1] Enforce input-size cap and partial status for oversized items (no raw body retention).  
+  DoD: oversize emails are marked partial/skipped with non-PII `statusReason`; Verify: test with oversized content.
 
-### User Story 3 - Intent Classification (Priority: P1)
+- [ ] T013 [US1] Ensure ODS writes contain **minimal identifiers/derived fields only** (SC-007).  
+  DoD: no full raw body persisted beyond active window; Verify: inspect Data Table write payloads.
 
-**Goal**: Classify signal emails as Actionable/FYI/Forward.
-
-**Independent Test**: Submit sample emails and verify intent classification accuracy.
-
-- [X] T009 [US3] Add AI Agent node (or prompt branch) for intent classification with confidence in workflows/Waypoint-classifier.json. DoD: intent output includes Actionable/FYI/Forward; Verify: node configuration in workflows/Waypoint-classifier.json.
-
-### User Story 4 - Waypoint Extraction (Priority: P1)
-
-**Goal**: Extract dueDate, stakeholders, and actionItems into a Task Card.
-
-**Independent Test**: Provide emails with known fields and verify extracted Task Card fields.
-
-- [X] T010 [US4] Add AI Agent extraction prompt to produce Task Card fields in workflows/Waypoint-classifier.json. DoD: extraction output includes dueDate/stakeholders/actionItems; Verify: prompt and output mapping in workflows/Waypoint-classifier.json.
-- [X] T011 [US4] Validate Task Card output against contracts/task-card.schema.json in workflows/Waypoint-classifier.json. DoD: invalid outputs set partial status with statusReason; Verify: schema validation logic and contract path in workflows/Waypoint-classifier.json.
-
-**Checkpoint**: User Stories 2–4 are independently testable and yield valid Task Cards.
+- [ ] T014 [US1] Add/verify stable correlation identifiers that can be used by Telegram HITL callbacks (e.g., `messageId`, `threadId`, taskCandidateId).  
+  DoD: downstream callback can uniquely map back to the correct candidate; Verify: end-to-end click test with a known message.
 
 ---
 
-## Phase 4: Sync & Deduplication — User Story 5 (Priority: P0)
+## Phase 3: Telegram HITL Approve/Decline — US2
 
-**Goal**: Sync actionable Task Cards to Google Tasks with idempotency and labeling.
+**File**: `workflows/Waypoint-Telegram-Approve Or Decline Flow.json`
 
-**Independent Test**: Create a Task Card and confirm Google Task creation, RFC 3339 due date, and Gmail labeling.
+- [ ] T020 [US2] Verify Telegram callback trigger is configured and reliably receives button presses.  
+  DoD: Approve/Decline button press triggers workflow; Verify: manual Telegram test.
 
-- [X] T012 [US5] Implement RFC 3339 dueDate output directly from AI Agent in workflows/Waypoint-classifier.json. DoD: AI outputs correctly formatted date or "null"; Verify: prompt and output parser in workflows/Waypoint-classifier.json.
-- [X] T013 [US5] Add Google Tasks lookup/list step to check idempotency key (ThreadId/MessageId) in notes before create to handle mail loops. DoD: existing ThreadId skips or updates task; Verify: list+filter logic in workflows/Waypoint-task.json.
-- [X] T013a [US5] Enhance deduplication to handle mail loops: If ThreadId exists, append new snippet to existing task instead of creating new one. DoD: no duplicate tasks for same thread; Verify: integration test with multi-email thread.
-- [X] T014 [US5] Add Google Tasks create node mapping to contracts/google-tasks-sync.request.json in workflows/Waypoint-task.json. DoD: title/notes/due mapping matches contract; Verify: node fields and mapping in workflows/Waypoint-task.json.
-- [X] T015 [US5] Add Gmail label node to apply "WAYPOINT-Processed" after successful sync in workflows/Waypoint-task.json. DoD: label applied only on sync success; Verify: node placement/conditions in workflows/Waypoint-task.json.
-- [X] T016 [US5] Create Error Trigger workflow in workflows/waypoint-error-trigger.json emitting non-PII events per contracts/error-event.schema.json. DoD: error workflow references schema fields and excludes PII; Verify: review workflows/waypoint-error-trigger.json.
+- [ ] T021 [US2] Implement/verify approval state transitions persisted in ODS (e.g., `Task_Table`).  
+  DoD: states include at least PENDING/APPROVED/DECLINED with timestamps; Verify: inspect ODS updates.
 
----
+- [ ] T022 [US2] Confirm **no external side effects** occur on approval/decline in current scope (Google Tasks sync is deferred).  
+  DoD: no Google Tasks API calls exist; Verify: node inventory review.
 
-## Phase 6: Notification & HITL — User Story 6 (Priority: P1)
-
-**Goal**: Deliver a high-density intelligence summary to Telegram and enable user-driven navigation (Approve/Decline).
-
-- [X] T020 [US6] Create Telegram notification workflow in workflows/Waypoint-Collect_TG.json. DoD: workflow exists and can send messages; Verify: manual trigger test.
-- [X] T021 [US6] Implement high-density Markdown V2 template for Telegram reports (Total processed, Actionable/FYI/Noise counts). DoD: template matches Hackathon standards; Verify: inspect template in workflows/Waypoint-Collect_TG.json.
-- [X] T022 [US6] Aggregate Draft Task details in Telegram summary with Interactive Buttons (Approve/Decline). DoD: summary includes critical action items and webhook triggers; Verify: integration test.
-- [X] T023 [US6] Implement "Approve or Decline Flow" in workflows/Waypoint-Telegram-Approve Or Decline Flow.json to handle user decisions. DoD: clicking 'Approve' triggers task sync; Verify: end-to-end navigation test.
-- [X] T024 [US6] Implement scheduled summary delivery (e.g., 08:00, 12:00, 18:00) in workflows/Waypoint-Collect_TG.json. DoD: scheduler configured; Verify: inspect trigger settings.
-
-**Checkpoint**: User Story 5 is independently testable and delivers tasks to Google Tasks with deduplication.
+- [ ] T023 [US2] Validate callback payload integrity (signature/secret if used; otherwise tokenized callback_data) and reject malformed/unmapped callbacks.  
+  DoD: invalid callbacks do not mutate state; Verify: send malformed callback test.
 
 ---
 
-## Phase 5: Testing & Compliance
+## Phase 4: Telegram Intelligence Report / Navigation Hub — US3
 
-**Purpose**: Validate workflow behavior and stateless privacy compliance.
+**File**: `workflows/Waypoint-Collect_TG.json`
 
-- [ ] T017 Create workflow execution test checklist in specs/001-p0-email-task-core/testing.md covering US1–US5 acceptance scenarios. DoD: checklist maps to each story’s independent test; Verify: review specs/001-p0-email-task-core/testing.md.
-- [X] T018 [P] Create stateless privacy audit checklist in specs/001-p0-email-task-core/compliance.md (no execution data saved, no PII in logs). DoD: audit steps and pass criteria documented; Verify: review specs/001-p0-email-task-core/compliance.md.
-- [ ] T019 Update specs/001-p0-email-task-core/quickstart.md to reference testing and compliance checklists. DoD: quickstart links to testing/compliance docs; Verify: review specs/001-p0-email-task-core/quickstart.md.
+- [ ] T030 [US3] Implement/verify report aggregates: Tasks / FYI / Noise counts + critical items (SC-014).  
+  DoD: message includes required sections and counts; Verify: run report after ingestion.
+
+- [ ] T031 [US3] Ensure the report supports navigation context (links/IDs) consistent with HITL workflow correlation keys.  
+  DoD: items in report map to actionable HITL buttons/records; Verify: click-through + callback updates intended record.
+
+- [ ] T032 [US3] Validate Telegram formatting stability (Markdown/MarkdownV2 as configured) to avoid message send failures.  
+  DoD: no formatting exceptions across typical content; Verify: run with edge-case characters.
+
+---
+
+## Phase 5: Schema Validation, Performance, and Privacy — US4
+
+**Goal**: Meet the plan’s in-scope Success Criteria: SC-002, SC-007, SC-008, SC-014.
+
+- [ ] T040 [US4] Add/verify Task Card schema validation step (SC-008) within the workflow(s) that produce Task Cards.  
+  Files: `workflows/Waypoint-mail-retriever.json` and/or `workflows/Waypoint-Collect_TG.json` (wherever Task Cards are generated).  
+  DoD: invalid cards are rejected or marked partial with non-PII reason; Verify: inject invalid sample.
+
+- [ ] T041 [US4] Run privacy audit (SC-007) using `specs/001-p0-email-task-core/compliance.md`.  
+  DoD: audit passes; Verify: attach evidence notes (what was checked, where).
+
+- [ ] T042 [US4] Run performance check (SC-002) on a 100-email batch using the test checklist.  
+  DoD: under 5 minutes end-to-end (or within the target in spec); Verify: record timestamps and environment details.
+
+- [ ] T043 [US4] Verify Telegram delivery timing + template compliance (SC-014).  
+  DoD: scheduled/manual runs deliver within 5 minutes; Verify: capture send timestamps and rendered message.
+
+---
+
+## Deferred / Out of Scope (Epic 3)
+
+> These tasks are intentionally deferred until corresponding workflow JSON files exist under `/workflows/`.
+
+- [ ] D001 Implement Google Tasks sync workflow JSON (Epic 3), including field mapping and RFC 3339 conversion.
+- [ ] D002 Implement “Sync Expert” reconciliation logic (Create/Update/Skip) + idempotency keys.
+- [ ] D003 Add dedicated error-trigger workflow JSON artifact for centralized alerting/auditability.
+
+---
+
+## Definition of Done (Overall)
+
+- The three in-scope workflows execute in the documented sequence and interoperate via stable correlation keys.
+- SC-002 / SC-007 / SC-008 / SC-014 are demonstrably testable and pass via `testing.md` + `compliance.md`.
+- ODS usage is minimal and compliant: no raw email body retention beyond the active window; execution history is pruned/disabled.
+- No Google Tasks side effects exist in the current implementation (explicitly deferred).
