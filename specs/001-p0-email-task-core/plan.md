@@ -7,7 +7,7 @@
 
 ## Summary
 
-Deliver a modular n8n architecture that ingests Gmail, buffers data in internal tables, and uses specialized AI agents to analyze email threads and synchronize tasks. The pipeline consists of four core workflows: **Retriever** (Ingestion), **Classifier** (Thread-level Intelligence), **Task Sync** (AI-driven Deduplication), and **Telegram** (Intelligence Delivery). The system uses a buffered architecture (`Mail_Table`, `LLM_Table`, `Task_Table`) to enable robust thread merging and state management while maintaining privacy-conscious processing.
+Deliver a modular n8n architecture that ingests Gmail, buffers data in internal tables, and uses specialized AI agents to analyze email threads and synchronize tasks with Human-in-the-Loop (HITL) approval. The pipeline consists of five core workflows: **Retriever** (Ingestion), **Classifier** (Thread-level Intelligence), **Intelligence Delivery** (Telegram Hub), **Task Sync** (AI-driven Deduplication), and **HITL Navigation** (Approve/Decline Flow). The system uses a buffered architecture (`Mail_Table`, `LLM_Table`, `Task_Table`) to enable robust thread merging and state management while maintaining privacy-conscious processing.
 
 ## Technical Context
 
@@ -16,20 +16,20 @@ Deliver a modular n8n architecture that ingests Gmail, buffers data in internal 
 **Storage**: n8n Internal Data Tables (`Mail_Table`, `LLM_Table`, `Task_Table`) used as a temporary Operational Data Store (ODS).  
 **Testing**: Modular workflow execution tests + AI Agent logic validation.  
 **Target Platform**: Self-hosted n8n on Linux Docker  
-**Project Type**: modular (separate workflows for ingestion, analysis, sync, and notification)  
+**Project Type**: modular (separate workflows for ingestion, analysis, sync, notification, and human-in-the-loop approval)  
 **Performance Goals**: Process 100 emails and generate/sync tasks in <5 minutes (SC-002)  
-**Constraints**: Thread-level context merging, AI-driven idempotency, Asia/Taipei timezone handling.  
-**Scale/Scope**: P0 core intelligence pipeline supporting multi-email thread deduplication.
+**Constraints**: Thread-level context merging, AI-driven idempotency, Asia/Taipei timezone handling, HITL approval.  
+**Scale/Scope**: P0 core intelligence pipeline supporting multi-email thread deduplication and user-driven task approval.
 
 ## Constitution Check
 
-- **Principle I (Code Quality)**: PASS — Workflows are modularized by responsibility (Ingest, Classify, Sync, Notify).
+- **Principle I (Code Quality)**: PASS — Workflows are modularized by responsibility (Ingest, Classify, Sync, Notify, Approve).
 - **Principle II (Testing Standards)**: PASS — Independent testing possible for each module via the ODS tables.
-- **Principle III (User Experience)**: PASS — Proactive Telegram summaries provide high-density intelligence delivery.
+- **Principle III (User Experience)**: PASS — Proactive Telegram summaries with interactive buttons provide high-density intelligence delivery and control.
 - **Principle IV (MVP & Anti-Over-Design)**: PASS — No external frontend; leverage native Google Tasks and Telegram UI.
 - **Principle V (Stateless Processing)**: PARTIAL — Uses internal tables for buffering thread context; execution data pruning remains active.
 - **Principle VI (Integration Flexibility)**: PASS — Modular design allows replacing individual AI Agents or providers.
-- **Principle VII (Error Handling)**: PASS — Status tracking in DB tables allows for robust retry and auditing.
+- **Principle VII (Error Handling)**: PASS — Status tracking in DB tables and dedicated Error Trigger workflow allow for robust retry and auditing.
 
 ## Project Structure
 
@@ -46,10 +46,11 @@ specs/001-p0-email-task-core/
 
 ```text
 workflows/
-├── Waypoint-mail-retriever.json  # Ingestion module
-├── Waypoint-classifier.json      # Intelligence module (Thread analysis)
-├── Waypoint-task.json            # Synchronization module (Sync Expert)
-└── Waypoint_Telegram.json        # Notification module
+├── Waypoint-mail-retriever.json              # Ingestion module
+├── Waypoint-classifier.json                  # Intelligence module (Thread analysis) - Integrated in Collect_TG
+├── Waypoint-Collect_TG.json                  # Integrated Intelligence & Notification module
+├── Waypoint-task.json                        # Synchronization module (Sync Expert)
+└── Waypoint-Telegram-Approve Or Decline Flow.json # HITL Navigation module
 ```
 
 **Structure Decision**: Documentation-driven plan; workflow JSON will be stored under workflows/ when implemented.
