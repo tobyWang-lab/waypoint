@@ -65,11 +65,8 @@ Update the following credentials in n8n for each workflow node:
 - **Google Gemini(PaLM) API**: Enter your API Key.
 
 ### 3. Setup Environment Variables
-To ensure **Stateless Processing** and proper timezone handling, add these to your n8n environment:
-```env
-GENERIC_TIMEZONE=Asia/Taipei
-N8N_EXECUTION_PROCESS_DATA_PRUNING=true
-```
+1. Set the Table Prefix in the first Edit Field node of the Waypoint-mail-retriever workflow.
+2. (Optional) Set up Opik in n8n，reference: https://www.comet.com/docs/opik/integrations/n8n
 
 ---
 
